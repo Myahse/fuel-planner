@@ -34,250 +34,282 @@
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-html {
-  scroll-behavior: smooth;
-  color-scheme: dark;
+/* Custom rules live in layers so Tailwind utilities (which sit in the later
+   "utilities" layer) can always override them — e.g. `px-8` on a `.btn`. */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    color: var(--color-fg);
+    background: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "tnum" 1;
+  }
+
+  ::selection {
+    background: rgb(255 176 32 / 0.3);
+    color: var(--color-fg);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-signal);
+    outline-offset: 2px;
+  }
+
+  button:focus:not(:focus-visible) {
+    outline: none;
+  }
 }
 
-html,
-body,
-#root {
-  min-height: 100%;
-}
+@layer components {
+  /* ── Type ─────────────────────────────────────────── */
 
-body {
-  margin: 0;
-  font-family: var(--font-sans);
-  font-size: 15px;
-  color: var(--color-fg);
-  background: var(--color-bg);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "tnum" 1;
-}
+  /* Instrument readings: condensed, tabular, tight. */
+  .readout {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    line-height: 0.9;
+  }
 
-::selection {
-  background: rgb(255 176 32 / 0.3);
-  color: var(--color-fg);
-}
+  /* Units and small technical labels. Lowercase on purpose — no shouting eyebrows. */
+  .unit {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--color-fg-3);
+  }
 
-:focus-visible {
-  outline: 2px solid var(--color-signal);
-  outline-offset: 2px;
-}
+  .title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.005em;
+    line-height: 1;
+  }
 
-button:focus:not(:focus-visible) {
-  outline: none;
-}
+  /* ── Surfaces ─────────────────────────────────────── */
 
-/* ── Type ─────────────────────────────────────────── */
+  .panel {
+    background: var(--color-panel);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-md);
+  }
 
-/* Instrument readings: condensed, tabular, tight. */
-.readout {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-  line-height: 0.9;
-}
+  .rule {
+    border-color: var(--color-line);
+  }
 
-/* Units and small technical labels. Lowercase on purpose — no shouting eyebrows. */
-.unit {
-  font-family: var(--font-mono);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--color-fg-3);
-}
+  /* A row inside a list — the list owns the border, rows get hairlines. */
+  .row-link {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1rem;
+    transition: background 0.15s ease;
+  }
+  .row-link:hover {
+    background: var(--color-panel-2);
+  }
 
-.title {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: 0.005em;
-  line-height: 1;
-}
+  /* ── Controls ─────────────────────────────────────── */
 
-/* ── Surfaces ─────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    height: 3rem;
+    padding: 0 1.25rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    letter-spacing: 0.01em;
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease,
+      transform 0.1s ease;
+    user-select: none;
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-sm {
+    height: 2.5rem;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+  }
+  .btn-primary {
+    background: var(--color-signal);
+    color: var(--color-signal-ink);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-signal-hi);
+  }
+  .btn-ghost {
+    border: 1px solid var(--color-line-strong);
+    color: var(--color-fg);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    border-color: var(--color-fg-3);
+    background: var(--color-panel-2);
+  }
+  .btn-danger {
+    background: var(--color-danger);
+    color: #1a0503;
+  }
 
-.panel {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-}
+  .icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-line-strong);
+    color: var(--color-fg);
+    transition:
+      background 0.15s ease,
+      border-color 0.15s ease;
+  }
+  .icon-btn:hover {
+    background: var(--color-panel-2);
+    border-color: var(--color-fg-3);
+  }
 
-.rule {
-  border-color: var(--color-line);
-}
+  .field {
+    width: 100%;
+    height: 3rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-line-strong);
+    background: var(--color-panel);
+    padding: 0 0.875rem;
+    font-size: 1rem;
+    color: var(--color-fg);
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  textarea.field {
+    height: auto;
+    padding: 0.75rem 0.875rem;
+  }
+  select.field {
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--color-fg-3) 50%),
+      linear-gradient(135deg, var(--color-fg-3) 50%, transparent 50%);
+    background-position:
+      calc(100% - 18px) 50%,
+      calc(100% - 13px) 50%;
+    background-size: 5px 5px;
+    background-repeat: no-repeat;
+  }
+  .field::placeholder {
+    color: var(--color-fg-3);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-signal);
+    box-shadow: 0 0 0 3px rgb(255 176 32 / 0.15);
+  }
+  .field-label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--color-fg-2);
+  }
 
-/* A row inside a list — the list owns the border, rows get hairlines. */
-.row-link {
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.875rem 1rem;
-  transition: background 0.15s ease;
-}
-.row-link:hover {
-  background: var(--color-panel-2);
-}
+  /* Segmented control — the gear-selector look. */
+  .seg {
+    display: flex;
+    border: 1px solid var(--color-line-strong);
+    border-radius: var(--radius-sm);
+    padding: 2px;
+    gap: 2px;
+  }
+  .seg > button {
+    flex: 1;
+    height: 2.25rem;
+    border-radius: var(--radius-xs);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-fg-3);
+    transition:
+      background 0.15s ease,
+      color 0.15s ease;
+  }
+  .seg > button:hover {
+    color: var(--color-fg);
+  }
+  .seg > button[aria-pressed="true"],
+  .seg > button[aria-checked="true"] {
+    background: var(--color-panel-3);
+    color: var(--color-fg);
+    box-shadow: inset 0 -2px 0 var(--color-signal);
+  }
 
-/* ── Controls ─────────────────────────────────────── */
+  /* Status lamp: a small lit indicator instead of emoji. */
+  .lamp {
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: currentColor;
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 20%, transparent),
+      0 0 12px color-mix(in srgb, currentColor 60%, transparent);
+  }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  height: 3rem;
-  padding: 0 1.25rem;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 0.9375rem;
-  letter-spacing: 0.01em;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease,
-    transform 0.1s ease;
-  user-select: none;
-}
-.btn:active:not(:disabled) {
-  transform: translateY(1px);
-}
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.btn-sm {
-  height: 2.5rem;
-  padding: 0 1rem;
-  font-size: 0.875rem;
-}
-.btn-primary {
-  background: var(--color-signal);
-  color: var(--color-signal-ink);
-}
-.btn-primary:hover:not(:disabled) {
-  background: var(--color-signal-hi);
-}
-.btn-ghost {
-  border: 1px solid var(--color-line-strong);
-  color: var(--color-fg);
-}
-.btn-ghost:hover:not(:disabled) {
-  border-color: var(--color-fg-3);
-  background: var(--color-panel-2);
-}
-.btn-danger {
-  background: var(--color-danger);
-  color: #1a0503;
-}
+  /* Faint engineering grid used behind the 3D car and hero readouts. */
+  .grid-bg {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
 
-.icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-line-strong);
-  color: var(--color-fg);
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease;
-}
-.icon-btn:hover {
-  background: var(--color-panel-2);
-  border-color: var(--color-fg-3);
-}
+  /* ── Range input ──────────────────────────────────── */
 
-.field {
-  width: 100%;
-  height: 3rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-line-strong);
-  background: var(--color-panel);
-  padding: 0 0.875rem;
-  font-size: 1rem;
-  color: var(--color-fg);
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-textarea.field {
-  height: auto;
-  padding: 0.75rem 0.875rem;
-}
-select.field {
-  appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--color-fg-3) 50%),
-    linear-gradient(135deg, var(--color-fg-3) 50%, transparent 50%);
-  background-position:
-    calc(100% - 18px) 50%,
-    calc(100% - 13px) 50%;
-  background-size: 5px 5px;
-  background-repeat: no-repeat;
-}
-.field::placeholder {
-  color: var(--color-fg-3);
-}
-.field:focus {
-  outline: none;
-  border-color: var(--color-signal);
-  box-shadow: 0 0 0 3px rgb(255 176 32 / 0.15);
-}
-.field-label {
-  display: block;
-  margin-bottom: 0.375rem;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--color-fg-2);
-}
-
-/* Segmented control — the gear-selector look. */
-.seg {
-  display: flex;
-  border: 1px solid var(--color-line-strong);
-  border-radius: var(--radius-sm);
-  padding: 2px;
-  gap: 2px;
-}
-.seg > button {
-  flex: 1;
-  height: 2.25rem;
-  border-radius: var(--radius-xs);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--color-fg-3);
-  transition:
-    background 0.15s ease,
-    color 0.15s ease;
-}
-.seg > button:hover {
-  color: var(--color-fg);
-}
-.seg > button[aria-pressed="true"],
-.seg > button[aria-checked="true"] {
-  background: var(--color-panel-3);
-  color: var(--color-fg);
-  box-shadow: inset 0 -2px 0 var(--color-signal);
-}
-
-/* Status lamp: a small lit indicator instead of emoji. */
-.lamp {
-  display: inline-block;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 9999px;
-  background: currentColor;
-  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 20%, transparent),
-    0 0 12px color-mix(in srgb, currentColor 60%, transparent);
-}
-
-/* Faint engineering grid used behind the 3D car and hero readouts. */
-.grid-bg {
-  background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
-  background-size: 24px 24px;
+  .fuel-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, var(--color-signal) var(--pct, 50%), var(--color-line-strong) var(--pct, 50%));
+  }
+  .fuel-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 3px;
+    background: var(--color-fg);
+    border: 4px solid var(--color-bg);
+    box-shadow: 0 0 0 1px var(--color-line-strong);
+  }
+  .fuel-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    background: var(--color-fg);
+    border: 3px solid var(--color-bg);
+  }
 }
 
 /* ── Motion ───────────────────────────────────────── */
@@ -308,32 +340,6 @@ select.field {
   *::after {
     transition-duration: 0.01ms !important;
   }
-}
-
-/* ── Range input ──────────────────────────────────── */
-
-.fuel-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(to right, var(--color-signal) var(--pct, 50%), var(--color-line-strong) var(--pct, 50%));
-}
-.fuel-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 22px;
-  height: 22px;
-  border-radius: 3px;
-  background: var(--color-fg);
-  border: 4px solid var(--color-bg);
-  box-shadow: 0 0 0 1px var(--color-line-strong);
-}
-.fuel-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  background: var(--color-fg);
-  border: 3px solid var(--color-bg);
 }
 
 /* ── Leaflet on dark ──────────────────────────────── */

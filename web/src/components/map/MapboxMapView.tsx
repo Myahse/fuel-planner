@@ -90,7 +90,8 @@ export default function MapboxMapView({
     })
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right')
     if (interactive) map.addControl(new mapboxgl.NavigationControl({ showCompass: mode === 'navigation' }), 'top-left')
-    map.on('load', () => {
+    // 'style.load' fires once the style is parsed; 'load' also waits for every first tile, which can stall on slow networks.
+    map.on('style.load', () => {
       addLayers(map)
       setReady(true)
     })
