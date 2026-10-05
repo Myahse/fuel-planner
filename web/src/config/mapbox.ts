@@ -9,6 +9,6 @@ export const MAPBOX_TOKEN: string = import.meta.env.VITE_MAPBOX_TOKEN ?? ''
 export const MAPBOX_COUNTRY: string = import.meta.env.VITE_MAPBOX_COUNTRY ?? 'ci'
 
 export const MAP_STYLES = {
-  default: 'mapbox://styles/mapbox/dark-v11',
-  navigation: 'mapbox://styles/mapbox/navigation-night-v1',
+  default: 'mapbox://styles/mapbox/light-v11',
+  navigation: 'mapbox://styles/mapbox/navigation-day-v1',
 } as const

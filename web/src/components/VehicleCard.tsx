@@ -41,7 +41,7 @@ export function VehicleCard({ vehicle, featured, onSetDefault, onEdit, onCustomi
       )}
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="title text-[2.25rem] text-fg">
+          <h2 className="title text-[1.75rem] text-fg">
             {vehicle.make} <span className="text-fg-2">{vehicle.model}</span>
           </h2>
           <p className="unit mt-1">

@@ -23,32 +23,32 @@ export function WhereToSearch() {
 
   return (
     <div>
-      <form onSubmit={submit} role="search" className="flex items-stretch rounded-sm border border-line-strong bg-panel transition focus-within:border-signal">
-        <label className="flex min-w-0 flex-1 flex-col justify-center px-4 py-2.5">
-          <span className="unit">from {shortPlace(origin).toLowerCase()} to</span>
+      <form onSubmit={submit} role="search" className="flex items-center gap-2 rounded-full bg-teal py-2 pl-6 pr-2 text-digit shadow-[0_4px_0_#123f3c]">
+        <label className="min-w-0 flex-1">
+          <span className="block text-xs font-medium opacity-75">From {shortPlace(origin)}</span>
           <PlaceField
-            className="w-full bg-transparent text-xl font-semibold text-fg outline-none focus-visible:outline-none placeholder:text-fg-3"
-            placeholder="Where to?"
+            className="w-full bg-transparent font-[family-name:var(--font-display)] text-lg text-digit outline-none placeholder:text-digit/80 focus-visible:outline-none"
+            placeholder="Where to today?"
             value={destination}
             onChange={setDestination}
             enterKeyHint="go"
             aria-label="Destination"
           />
         </label>
-        <Link to="/app/plan" className="flex w-12 items-center justify-center border-l border-line text-fg-3 transition hover:text-fg" aria-label="More trip options">
-          <SlidersHorizontal className="h-4 w-4" />
+        <Link to="/app/plan" className="flex h-11 w-11 items-center justify-center rounded-full text-digit/80 hover:bg-teal-hi" aria-label="More trip options">
+          <SlidersHorizontal className="h-5 w-5" />
         </Link>
         <button
           type="submit"
           disabled={!vehicle || !destination.trim() || isPending}
-          className="flex w-14 items-center justify-center bg-signal text-signal-ink transition hover:bg-signal-hi disabled:bg-panel-3 disabled:text-fg-3"
+          className="flex h-12 w-12 items-center justify-center rounded-full border-[2.5px] border-espresso bg-mustard text-espresso transition disabled:border-digit/30 disabled:bg-teal-hi disabled:text-digit/60"
           aria-label="Calculate trip"
         >
-          {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" strokeWidth={2.25} />}
+          {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" strokeWidth={2.8} />}
         </button>
       </form>
       {isError && (
-        <p className="mt-2 text-sm text-danger" role="alert">
+        <p className="mt-2 px-2 text-sm font-bold text-danger" role="alert">
           Couldn&apos;t calculate that route. Check the destination and try again.
         </p>
       )}

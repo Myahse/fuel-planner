@@ -80,7 +80,7 @@ export function TripResultPage() {
       <PageHeader title={`${shortPlace(result.origin)} → ${shortPlace(result.destination)}`} backTo="/app/plan" />
 
       {vehicles.length > 1 && vehicle && (
-        <div className="-mt-1 flex gap-5 overflow-x-auto border-b border-line" role="tablist" aria-label="Compare vehicle">
+        <div className="-mx-4 -mt-1 flex gap-2 overflow-x-auto px-4 pb-1" role="tablist" aria-label="Compare vehicle">
           {vehicles.map((v) => {
             const active = v.id === vehicle.id
             return (
@@ -90,8 +90,8 @@ export function TripResultPage() {
                 role="tab"
                 aria-selected={active}
                 onClick={() => setSelectedVehicleId(v.id)}
-                className={`-mb-px flex shrink-0 items-center gap-2 border-b-2 pb-2.5 text-sm font-semibold transition ${
-                  active ? 'border-signal text-fg' : 'border-transparent text-fg-3 hover:text-fg-2'
+                className={`flex shrink-0 items-center gap-2 rounded-full border-[2.5px] border-espresso px-3 py-1.5 text-sm font-bold transition ${
+                  active ? 'bg-espresso text-digit' : 'bg-panel text-fg hover:bg-panel-2'
                 }`}
               >
                 <VehicleSilhouette bodyType={resolveBodyType(v)} paint={resolvePaint(v.make, v.paint_color)} className="h-4 w-10 text-fg" />

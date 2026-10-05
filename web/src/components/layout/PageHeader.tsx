@@ -17,16 +17,16 @@ export function PageHeader({
     <header className="mb-6 pt-2 lg:pt-0">
       <div className="flex items-center justify-between gap-3">
         {backTo ? (
-          <Link to={backTo} className="icon-btn h-10 w-10 shrink-0" aria-label="Go back">
-            <ArrowLeft className="h-4 w-4" />
+          <Link to={backTo} className="icon-btn h-11 w-11 shrink-0" aria-label="Go back">
+            <ArrowLeft className="h-5 w-5" strokeWidth={2.4} />
           </Link>
         ) : (
           <span />
         )}
         {right}
       </div>
-      <h1 className="title mt-5 text-[2rem] text-fg sm:text-[2.25rem]">{title}</h1>
-      {subtitle && <p className="mt-2 max-w-md text-sm leading-relaxed text-fg-2">{subtitle}</p>}
+      <h1 className="title mt-5 text-[1.75rem] text-fg sm:text-[2rem]">{title}</h1>
+      {subtitle && <p className="mt-2 max-w-md text-[15px] leading-relaxed text-fg-2">{subtitle}</p>}
     </header>
   )
 }

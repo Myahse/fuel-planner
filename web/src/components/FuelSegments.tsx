@@ -16,11 +16,11 @@ export function FuelSegments({ percent, bars, className = '' }: Props) {
   return (
     <div className={`flex items-center gap-2 ${className}`} role="meter" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)} aria-label="Fuel level">
       <span className="unit">E</span>
-      <div className="flex flex-1 gap-[3px]">
+      <div className="flex flex-1 gap-1">
         {Array.from({ length: bars }).map((_, i) => (
           <motion.span
             key={i}
-            className={`h-3 flex-1 rounded-[1px] ${i < filled ? (low ? 'bg-danger' : 'bg-signal') : 'bg-line-strong'}`}
+            className={`h-5 flex-1 rounded-[6px] border-2 border-espresso ${i < filled ? (low ? 'bg-danger' : 'bg-signal') : 'bg-panel'}`}
             initial={{ opacity: 0, scaleY: 0.3 }}
             animate={{ opacity: 1, scaleY: 1 }}
             transition={{ delay: i * 0.035, duration: 0.25 }}

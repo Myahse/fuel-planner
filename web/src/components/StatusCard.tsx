@@ -20,7 +20,7 @@ export function TripVerdict({ assessment }: { assessment: TripAssessment }) {
     <div className={`border-l-2 ${t.border} py-1 pl-4`} role="status">
       <p className="flex items-center gap-3">
         <span className={`lamp ${t.lamp}`} aria-hidden />
-        <span className="title text-[2.5rem] text-fg">{t.headline}</span>
+        <span className="title text-[1.9rem] text-fg">{t.headline}</span>
       </p>
       <p className="mt-2 text-base text-fg-2">
         {status === 'insufficient' ? (

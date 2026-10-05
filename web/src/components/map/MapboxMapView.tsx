@@ -12,12 +12,12 @@ const RANGE = 'fuelgo-range'
 const EMPTY: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] }
 
 const markerColor = (v: MapMarker['variant']) =>
-  v === 'origin' ? colors.fg : v === 'destination' ? colors.signal : v === 'station' ? colors.ok : '#7cc4ff'
+  v === 'origin' ? colors.mustard : v === 'destination' ? colors.signal : v === 'station' ? colors.teal : '#7cc4ff'
 
 function markerElement(m: MapMarker) {
   const el = document.createElement('div')
   const c = markerColor(m.variant)
-  el.style.cssText = `width:12px;height:12px;border-radius:2px;background:${c};border:2px solid ${colors.bg};box-shadow:0 0 0 1px ${c},0 0 14px ${c}`
+  el.style.cssText = `width:16px;height:16px;border-radius:999px;background:${c};border:3px solid ${colors.espresso};box-shadow:0 2px 0 ${colors.espresso}`
   if (m.label) el.title = m.label
   return el
 }
@@ -37,7 +37,7 @@ function circle(center: { lat: number; lng: number }, radiusMeters: number): Geo
 function addLayers(map: mapboxgl.Map) {
   map.addSource(ROUTE, { type: 'geojson', data: EMPTY })
   map.addSource(RANGE, { type: 'geojson', data: EMPTY })
-  map.addLayer({ id: `${RANGE}-fill`, type: 'fill', source: RANGE, paint: { 'fill-color': colors.signal, 'fill-opacity': 0.06 } })
+  map.addLayer({ id: `${RANGE}-fill`, type: 'fill', source: RANGE, paint: { 'fill-color': colors.signal, 'fill-opacity': 0.1 } })
   map.addLayer({
     id: `${RANGE}-line`,
     type: 'line',
@@ -49,14 +49,14 @@ function addLayers(map: mapboxgl.Map) {
     type: 'line',
     source: ROUTE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': colors.bg, 'line-width': 8 },
+    paint: { 'line-color': colors.espresso, 'line-width': 9 },
   })
   map.addLayer({
     id: ROUTE,
     type: 'line',
     source: ROUTE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': colors.signal, 'line-width': 4 },
+    paint: { 'line-color': colors.signal, 'line-width': 5 },
   })
 }
 

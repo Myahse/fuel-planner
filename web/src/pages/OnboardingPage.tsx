@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CarViewer } from '../components/car3d/CarViewer'
 import { BrandMark } from '../components/layout/BrandMark'
-import { FuelSegments } from '../components/FuelSegments'
+import { FlipDigits } from '../components/retro/FlipDigits'
 
 export function OnboardingPage() {
   return (
@@ -16,7 +16,7 @@ export function OnboardingPage() {
       <main className="mx-auto grid w-full max-w-5xl flex-1 items-center gap-8 px-6 pb-10 lg:grid-cols-[1fr_1.1fr]">
         <div className="order-2 lg:order-1">
           <p className="unit">fuel planning · côte d&apos;ivoire</p>
-          <h1 className="title mt-4 text-[3.5rem] leading-[0.92] text-fg sm:text-[4.5rem]">
+          <h1 className="title mt-4 text-[2.6rem] leading-[0.95] text-fg sm:text-[3.6rem]">
             Know how far
             <br />
             your fuel
@@ -37,15 +37,18 @@ export function OnboardingPage() {
         </div>
 
         <div className="order-1 lg:order-2">
-          <CarViewer vehicle={{ make: 'Toyota', model: 'RAV4', paint_color: '#e9eaec', body_style: 'suv' }} variant="hero" autoRotate />
-          <div className="mx-auto max-w-sm">
-            <div className="flex items-end justify-between">
-              <p className="readout text-6xl text-fg">
-                412<span className="unit ml-1.5 text-sm">km</span>
-              </p>
-              <p className="unit pb-1">6/8 bars · 38.2 L</p>
-            </div>
-            <FuelSegments className="mt-4" percent={75} bars={8} />
+          <CarViewer
+            vehicle={{ make: 'Toyota', model: 'RAV4', paint_color: '#f2b33d', body_style: 'suv' }}
+            variant="hero"
+            autoRotate
+            className="rounded-[26px] border-[2.5px] border-espresso bg-panel"
+          />
+          <div className="pump -mt-6 relative mx-4 flex items-center justify-between gap-3 p-4">
+            <span>
+              <span className="unit block !text-mustard">range · km</span>
+              <span className="mt-1 block text-xs text-digit/70">6 of 8 bars · 38.2 L</span>
+            </span>
+            <FlipDigits value="412" size="lg" label="412 kilometres of range" />
           </div>
         </div>
       </main>

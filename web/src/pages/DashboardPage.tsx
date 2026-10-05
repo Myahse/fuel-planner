@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import { getFuelCurrent, listFuelTransactions, listTrips } from '../api/endpoints'
 import { useActiveVehicle } from '../hooks/useActiveVehicle'
 import { CarViewer } from '../components/car3d/CarViewer'
@@ -18,7 +18,7 @@ function greeting(hour = new Date().getHours()) {
 }
 
 function shortDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: '2-digit' }).toUpperCase()
 }
 
 export function DashboardPage() {
@@ -41,20 +41,19 @@ export function DashboardPage() {
   const liters = fuelQuery.data?.estimated_fuel_liters ?? vehicle?.estimated_fuel_liters ?? 30
   const range = fuelQuery.data?.estimated_range_km ?? 400
   const consumption = fuelQuery.data?.consumption_l_per_100km ?? vehicle?.mixed_consumption ?? 7.5
-  const costPer100 = consumption * fuelPricePerLiter
 
   const lastFill = txQuery.data?.[0]
   const lastTrip = tripsQuery.data?.find((t) => !vehicle || t.vehicle_id === vehicle.id) ?? tripsQuery.data?.[0]
   const cheapest = [...MOCK_STATIONS].sort((a, b) => a.pricePerLiter - b.pricePerLiter)[0]
 
   return (
-    <div className="space-y-8">
-      <header className="flex items-center justify-between pt-1 lg:pt-0">
-        <span className="lg:hidden">
+    <div className="space-y-5">
+      <header className="flex items-center justify-between gap-3 pt-1 lg:pt-0">
+        <span className="pl-5 lg:hidden">
           <BrandMark />
         </span>
-        <p className="text-sm text-fg-3">
-          {greeting()}, <span className="text-fg-2">{displayName}</span>
+        <p className="text-right text-sm font-medium text-fg-2">
+          {greeting()},<br className="lg:hidden" /> <span className="font-bold text-fg">{displayName}</span>
         </p>
       </header>
 
@@ -62,7 +61,7 @@ export function DashboardPage() {
 
       {!vehiclesQuery.isLoading && !vehicle && (
         <>
-          <CarViewer vehicle={{ make: 'Toyota', model: 'Corolla' }} variant="hero" autoRotate />
+          <CarViewer vehicle={{ make: 'Toyota', model: 'Corolla' }} variant="hero" autoRotate className="rounded-[26px] border-[2.5px] border-espresso bg-panel" />
           <EmptyState
             title="Add your car to start"
             description="FUELGO needs your tank size and consumption to tell you how far you can go."
@@ -86,59 +85,54 @@ export function DashboardPage() {
               percent={pct}
               liters={liters}
               rangeKm={range}
+              pricePerLiter={fuelPricePerLiter}
+              verdict={`${consumption.toFixed(1)} L/100 km · about ${Math.round(consumption * fuelPricePerLiter).toLocaleString('en-US')} F per 100 km`}
             />
           )}
 
-          <dl className="grid grid-cols-3 divide-x divide-line border-y border-line">
-            <Metric label="consumption" value={consumption.toFixed(1)} unit="L/100km" />
-            <Metric label="fuel price" value={Math.round(fuelPricePerLiter).toLocaleString('en-US')} unit="FCFA/L" />
-            <Metric label="per 100 km" value={Math.round(costPer100).toLocaleString('en-US')} unit="FCFA" />
-          </dl>
+          <Link
+            to="/app/stations"
+            className="flex items-center justify-between gap-3 rounded-[18px] border-[2.5px] border-dashed border-signal bg-[repeating-linear-gradient(-45deg,rgb(226_70_43/0.06)_0_8px,transparent_8px_16px)] px-4 py-3"
+          >
+            <span>
+              <span className="block text-sm font-bold text-fg">Cheapest pump nearby</span>
+              <span className="title block text-2xl text-signal">{cheapest.pricePerLiter} F/L</span>
+            </span>
+            <span className="text-right text-sm font-bold text-fg">
+              {cheapest.brand}
+              <span className="flex items-center justify-end gap-1 font-medium text-fg-2">
+                on the route <ArrowRight className="h-4 w-4" />
+              </span>
+            </span>
+          </Link>
 
-          <section aria-labelledby="glance">
-            <h2 id="glance" className="mb-2 text-sm font-semibold text-fg-2">
-              Recently
-            </h2>
-            <ul className="divide-y divide-line border-y border-line">
-              <Row
-                to={lastFill ? `/app/fuel/transactions/${lastFill.id}` : '/app/fuel/add'}
-                k="Last fill-up"
-                v={lastFill ? `${lastFill.liters.toFixed(1)} L · ${shortDate(lastFill.created_at)}` : 'Log your first one'}
-              />
-              <Row to="/app/stations" k="Cheapest nearby" v={`${cheapest.brand} · ${cheapest.pricePerLiter} FCFA/L`} />
-              <Row
-                to={lastTrip ? `/app/history/${lastTrip.id}` : '/app/plan'}
-                k="Last trip"
-                v={lastTrip ? `${lastTrip.destination} · ${Math.round(lastTrip.distance_km)} km` : 'None yet'}
-              />
-            </ul>
-          </section>
+          <Link
+            to={lastTrip ? `/app/history/${lastTrip.id}` : '/app/plan'}
+            className="flex overflow-hidden rounded-[18px] border-[2.5px] border-espresso bg-mustard shadow-[0_3px_0_var(--color-espresso)]"
+          >
+            <span className="flex flex-col justify-center border-r-[2.5px] border-dashed border-espresso px-3 py-2.5">
+              <span className="unit !text-espresso">last trip</span>
+              <span className="readout text-2xl text-espresso">{lastTrip ? shortDate(lastTrip.created_at) : '—'}</span>
+            </span>
+            <span className="flex min-w-0 flex-col justify-center px-4 py-2.5 text-espresso">
+              <span className="truncate text-[17px] font-bold">
+                {lastTrip ? `${lastTrip.origin} → ${lastTrip.destination}` : 'No trips yet — plan your first'}
+              </span>
+              <span className="text-sm">
+                {lastTrip ? `${Math.round(lastTrip.distance_km)} km · ${lastTrip.fuel_required_liters?.toFixed(1) ?? '—'} L` : 'Distance, fuel and cost in one tap'}
+              </span>
+            </span>
+          </Link>
+
+          <Link to={lastFill ? `/app/fuel/transactions/${lastFill.id}` : '/app/fuel/add'} className="flex items-center justify-between px-1 text-sm font-medium text-fg-2 hover:text-fg">
+            <span>
+              Last fill-up:{' '}
+              <span className="font-bold text-fg">{lastFill ? `${lastFill.liters.toFixed(1)} L · ${shortDate(lastFill.created_at)}` : 'none logged yet'}</span>
+            </span>
+            <span className="font-bold text-signal">Log one →</span>
+          </Link>
         </>
       )}
     </div>
-  )
-}
-
-function Metric({ label, value, unit }: { label: string; value: string; unit: string }) {
-  return (
-    <div className="px-3 py-4 first:pl-0">
-      <dt className="unit">{label}</dt>
-      <dd className="readout mt-2 text-2xl text-fg">
-        {value}
-        <span className="unit ml-1">{unit}</span>
-      </dd>
-    </div>
-  )
-}
-
-function Row({ to, k, v }: { to: string; k: string; v: string }) {
-  return (
-    <li>
-      <Link to={to} className="group flex items-center gap-4 py-3.5">
-        <span className="w-32 shrink-0 text-sm text-fg-3">{k}</span>
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg">{v}</span>
-        <ArrowUpRight className="h-4 w-4 text-fg-3 transition group-hover:text-signal" />
-      </Link>
-    </li>
   )
 }

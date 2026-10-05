@@ -70,9 +70,8 @@ export function CarViewer({
 
   return (
     <div ref={ref} className={`relative overflow-hidden ${HEIGHT[variant]} ${className}`}>
-      {/* Floor: engineering grid fading into a pool of light under the car */}
-      <div className="grid-bg pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_70%_60%_at_50%_70%,black,transparent)]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-[radial-gradient(ellipse_50%_45%_at_50%_75%,rgb(255_255_255/0.07),transparent)]" />
+      {/* Floor: a striped pump island under the car */}
+      <div className="grid-bg pointer-events-none absolute inset-x-0 bottom-0 h-[42%] border-t-[2.5px] border-dashed border-espresso/25" />
       <div className={`absolute inset-0 ${interactive ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}>
         <Suspense fallback={<CarViewerFallback />}>
           <CarSceneCanvas

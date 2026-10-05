@@ -1,45 +1,53 @@
 @import "tailwindcss";
 
 /*
- * FUELGO — "instrument cluster" design language.
- * Near-black cockpit, one amber signal colour (the colour of a fuel warning lamp),
- * condensed numerals for readings, mono for units, hairlines instead of shadows.
+ * FUELGO — "retro petrol pump" design language.
+ * Cream paper, espresso-brown ink, tomato red for action, mustard and teal as supporting
+ * colours. Readings use flip-digit Oswald numerals like an old pump display; headings and
+ * labels use Bungee, the lettering of road-side signage. Chunky brown outlines, no hairlines.
  */
 @theme {
-  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Barlow Condensed", "Barlow", ui-sans-serif, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bungee", "DM Sans", ui-sans-serif, sans-serif;
+  --font-digits: "Oswald", "DM Sans", ui-sans-serif, sans-serif;
 
-  --color-bg: #0a0b0d;
-  --color-panel: #111215;
-  --color-panel-2: #17191d;
-  --color-panel-3: #1f2126;
-  --color-line: #23252a;
-  --color-line-strong: #33363d;
-  --color-fg: #ecedef;
-  --color-fg-2: #a4a8b0;
-  --color-fg-3: #6b7079;
-  --color-signal: #ffb020;
-  --color-signal-hi: #ffc552;
-  --color-signal-ink: #1a1100;
-  --color-ok: #5ad48a;
-  --color-warn: #ffb020;
-  --color-danger: #ff5a4e;
+  --color-bg: #f6ead2;
+  --color-panel: #fff8ea;
+  --color-panel-2: #f3e3c5;
+  --color-panel-3: #ead6b2;
+  --color-line: #e3cfac;
+  --color-line-strong: #2b1d14;
+  --color-fg: #2b1d14;
+  --color-fg-2: #5c4636;
+  --color-fg-3: #8a735f;
+  --color-signal: #e2462b;
+  --color-signal-hi: #f05a3d;
+  --color-signal-ink: #fff4dc;
+  --color-ok: #1d6b67;
+  --color-warn: #e59a1a;
+  --color-danger: #b3261e;
 
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
+  /* Supporting retro colours */
+  --color-mustard: #f2b33d;
+  --color-orange: #f08a2c;
+  --color-teal: #1d6b67;
+  --color-teal-hi: #24807b;
+  --color-espresso: #2b1d14;
+  --color-digit: #fff4dc;
+
+  --radius-xs: 6px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
 
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Custom rules live in layers so Tailwind utilities (which sit in the later
-   "utilities" layer) can always override them — e.g. `px-8` on a `.btn`. */
+/* Custom rules live in layers so Tailwind utilities (the later "utilities" layer)
+   can always override them — e.g. `px-8` on a `.btn`. */
 @layer base {
   html {
     scroll-behavior: smooth;
-    color-scheme: dark;
   }
 
   html,
@@ -52,69 +60,86 @@
     margin: 0;
     font-family: var(--font-sans);
     font-size: 15px;
+    font-weight: 500;
     color: var(--color-fg);
     background: var(--color-bg);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-feature-settings: "tnum" 1;
   }
 
   ::selection {
-    background: rgb(255 176 32 / 0.3);
+    background: rgb(242 179 61 / 0.5);
     color: var(--color-fg);
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-signal);
+    outline: 3px solid var(--color-mustard);
     outline-offset: 2px;
   }
 
   button:focus:not(:focus-visible) {
     outline: none;
   }
+
+  dialog::backdrop {
+    background: rgb(43 29 20 / 0.55);
+  }
 }
 
 @layer components {
   /* ── Type ─────────────────────────────────────────── */
 
-  /* Instrument readings: condensed, tabular, tight. */
+  /* Pump readings: tall condensed numerals. */
   .readout {
-    font-family: var(--font-display);
-    font-weight: 600;
+    font-family: var(--font-digits);
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
-    line-height: 0.9;
+    line-height: 0.95;
+    letter-spacing: 0.005em;
   }
 
-  /* Units and small technical labels. Lowercase on purpose — no shouting eyebrows. */
+  /* Small signage labels and units. */
   .unit {
-    font-family: var(--font-mono);
+    font-family: var(--font-display);
     font-size: 0.6875rem;
-    font-weight: 500;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.06em;
     color: var(--color-fg-3);
+    text-transform: uppercase;
   }
 
   .title {
     font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: 0.005em;
-    line-height: 1;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    line-height: 1.05;
   }
 
   /* ── Surfaces ─────────────────────────────────────── */
 
   .panel {
     background: var(--color-panel);
-    border: 1px solid var(--color-line);
+    border: 2.5px solid var(--color-espresso);
+    border-radius: var(--radius-lg);
+  }
+
+  /* The dark pump-face surface for headline readings. */
+  .pump {
+    background: var(--color-espresso);
+    color: var(--color-digit);
+    border-radius: 26px;
+    box-shadow:
+      0 4px 0 #120c08,
+      0 18px 30px -16px rgb(43 29 20 / 0.6);
+  }
+
+  /* Retro sign-off: a raised cream card with a hard espresso drop. */
+  .ticket {
+    background: var(--color-panel);
+    border: 2.5px solid var(--color-espresso);
     border-radius: var(--radius-md);
+    box-shadow: 0 3px 0 var(--color-espresso);
   }
 
-  .rule {
-    border-color: var(--color-line);
-  }
-
-  /* A row inside a list — the list owns the border, rows get hairlines. */
   .row-link {
     display: flex;
     align-items: center;
@@ -133,30 +158,32 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    height: 3rem;
-    padding: 0 1.25rem;
-    border-radius: var(--radius-sm);
-    font-weight: 600;
+    height: 3.25rem;
+    padding: 0 1.5rem;
+    border-radius: 999px;
+    border: 2.5px solid var(--color-espresso);
+    font-family: var(--font-display);
     font-size: 0.9375rem;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.03em;
     transition:
       background 0.15s ease,
-      border-color 0.15s ease,
-      color 0.15s ease,
-      transform 0.1s ease;
+      transform 0.1s ease,
+      box-shadow 0.1s ease;
+    box-shadow: 0 3px 0 var(--color-espresso);
     user-select: none;
   }
   .btn:active:not(:disabled) {
-    transform: translateY(1px);
+    transform: translateY(3px);
+    box-shadow: 0 0 0 var(--color-espresso);
   }
   .btn:disabled {
-    opacity: 0.4;
+    opacity: 0.45;
     cursor: not-allowed;
   }
   .btn-sm {
-    height: 2.5rem;
-    padding: 0 1rem;
-    font-size: 0.875rem;
+    height: 2.75rem;
+    padding: 0 1.125rem;
+    font-size: 0.8125rem;
   }
   .btn-primary {
     background: var(--color-signal);
@@ -166,92 +193,80 @@
     background: var(--color-signal-hi);
   }
   .btn-ghost {
-    border: 1px solid var(--color-line-strong);
+    background: var(--color-panel);
     color: var(--color-fg);
   }
   .btn-ghost:hover:not(:disabled) {
-    border-color: var(--color-fg-3);
     background: var(--color-panel-2);
   }
   .btn-danger {
     background: var(--color-danger);
-    color: #1a0503;
+    color: var(--color-signal-ink);
   }
 
   .icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--color-line-strong);
+    border-radius: 999px;
+    border: 2.5px solid var(--color-espresso);
+    background: var(--color-panel);
     color: var(--color-fg);
-    transition:
-      background 0.15s ease,
-      border-color 0.15s ease;
+    transition: background 0.15s ease;
   }
   .icon-btn:hover {
     background: var(--color-panel-2);
-    border-color: var(--color-fg-3);
   }
 
   .field {
     width: 100%;
-    height: 3rem;
+    height: 3.25rem;
     border-radius: var(--radius-sm);
-    border: 1px solid var(--color-line-strong);
+    border: 2.5px solid var(--color-espresso);
     background: var(--color-panel);
-    padding: 0 0.875rem;
+    padding: 0 1rem;
     font-size: 1rem;
+    font-weight: 500;
     color: var(--color-fg);
-    transition:
-      border-color 0.15s ease,
-      box-shadow 0.15s ease;
+    transition: box-shadow 0.15s ease;
   }
   textarea.field {
     height: auto;
-    padding: 0.75rem 0.875rem;
-  }
-  select.field {
-    appearance: none;
-    background-image: linear-gradient(45deg, transparent 50%, var(--color-fg-3) 50%),
-      linear-gradient(135deg, var(--color-fg-3) 50%, transparent 50%);
-    background-position:
-      calc(100% - 18px) 50%,
-      calc(100% - 13px) 50%;
-    background-size: 5px 5px;
-    background-repeat: no-repeat;
+    padding: 0.75rem 1rem;
   }
   .field::placeholder {
     color: var(--color-fg-3);
   }
   .field:focus {
     outline: none;
-    border-color: var(--color-signal);
-    box-shadow: 0 0 0 3px rgb(255 176 32 / 0.15);
+    box-shadow: 0 0 0 4px rgb(242 179 61 / 0.55);
   }
   .field-label {
     display: block;
-    margin-bottom: 0.375rem;
-    font-size: 0.8125rem;
-    font-weight: 500;
+    margin-bottom: 0.4rem;
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
     color: var(--color-fg-2);
   }
 
-  /* Segmented control — the gear-selector look. */
+  /* Segmented control: a pill row; the selected option becomes a dark pump key. */
   .seg {
     display: flex;
-    border: 1px solid var(--color-line-strong);
-    border-radius: var(--radius-sm);
-    padding: 2px;
-    gap: 2px;
+    border: 2.5px solid var(--color-espresso);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 3px;
+    background: var(--color-panel);
   }
   .seg > button {
     flex: 1;
-    height: 2.25rem;
-    border-radius: var(--radius-xs);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--color-fg-3);
+    height: 2.5rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--color-fg-2);
     transition:
       background 0.15s ease,
       color 0.15s ease;
@@ -261,28 +276,35 @@
   }
   .seg > button[aria-pressed="true"],
   .seg > button[aria-checked="true"] {
-    background: var(--color-panel-3);
-    color: var(--color-fg);
-    box-shadow: inset 0 -2px 0 var(--color-signal);
+    background: var(--color-espresso);
+    color: var(--color-digit);
   }
 
-  /* Status lamp: a small lit indicator instead of emoji. */
+  /* Status lamp — a small round indicator beside a text label. */
   .lamp {
     display: inline-block;
-    width: 0.5rem;
-    height: 0.5rem;
+    width: 0.625rem;
+    height: 0.625rem;
     border-radius: 9999px;
     background: currentColor;
-    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 20%, transparent),
-      0 0 12px color-mix(in srgb, currentColor 60%, transparent);
+    box-shadow: 0 0 0 2px var(--color-espresso);
   }
 
-  /* Faint engineering grid used behind the 3D car and hero readouts. */
+  /* Diagonal pump-island stripes, used behind the 3D car and on coupons. */
   .grid-bg {
-    background-image:
-      linear-gradient(to right, rgb(255 255 255 / 0.035) 1px, transparent 1px),
-      linear-gradient(to bottom, rgb(255 255 255 / 0.035) 1px, transparent 1px);
-    background-size: 24px 24px;
+    background-image: repeating-linear-gradient(-45deg, rgb(43 29 20 / 0.05) 0 10px, transparent 10px 20px);
+  }
+
+  /* Red-orange-mustard racing stripes. */
+  .stripes {
+    background: linear-gradient(
+      to bottom,
+      var(--color-signal) 0 30%,
+      transparent 30% 35%,
+      var(--color-orange) 35% 65%,
+      transparent 65% 70%,
+      var(--color-mustard) 70% 100%
+    );
   }
 
   /* ── Range input ──────────────────────────────────── */
@@ -290,25 +312,25 @@
   .fuel-slider {
     -webkit-appearance: none;
     appearance: none;
-    height: 4px;
-    border-radius: 2px;
-    background: linear-gradient(to right, var(--color-signal) var(--pct, 50%), var(--color-line-strong) var(--pct, 50%));
+    height: 10px;
+    border-radius: 999px;
+    border: 2px solid var(--color-espresso);
+    background: linear-gradient(to right, var(--color-signal) var(--pct, 50%), var(--color-panel) var(--pct, 50%));
   }
   .fuel-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 22px;
-    height: 22px;
-    border-radius: 3px;
-    background: var(--color-fg);
-    border: 4px solid var(--color-bg);
-    box-shadow: 0 0 0 1px var(--color-line-strong);
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: var(--color-mustard);
+    border: 3px solid var(--color-espresso);
   }
   .fuel-slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
-    background: var(--color-fg);
-    border: 3px solid var(--color-bg);
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--color-mustard);
+    border: 3px solid var(--color-espresso);
   }
 }
 
@@ -317,7 +339,7 @@
 @keyframes page-enter {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -325,7 +347,18 @@
   }
 }
 .page-enter {
-  animation: page-enter 0.3s var(--ease-out-quint) both;
+  animation: page-enter 0.35s var(--ease-out-quint) both;
+}
+
+@keyframes flip-in {
+  from {
+    transform: rotateX(-90deg);
+    opacity: 0.2;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -338,31 +371,25 @@
   *,
   *::before,
   *::after {
+    animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
 }
 
-/* ── Leaflet on dark ──────────────────────────────── */
+/* ── Maps ─────────────────────────────────────────── */
 
 .leaflet-container {
   font-family: var(--font-sans);
-  background: var(--color-bg) !important;
+  background: var(--color-panel-2) !important;
 }
-.leaflet-control-zoom a {
+.leaflet-control-zoom a,
+.mapboxgl-ctrl-group button {
   background: var(--color-panel) !important;
   color: var(--color-fg) !important;
-  border-color: var(--color-line) !important;
 }
-.leaflet-control-attribution {
-  background: rgb(10 11 13 / 0.7) !important;
-  color: var(--color-fg-3) !important;
-}
-.leaflet-control-attribution a {
-  color: var(--color-fg-2) !important;
-}
-
-/* Native <dialog> backdrop */
-dialog::backdrop {
-  background: rgb(0 0 0 / 0.6);
-  backdrop-filter: blur(2px);
+.mapboxgl-ctrl-group {
+  border: 2px solid var(--color-espresso) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  overflow: hidden;
 }

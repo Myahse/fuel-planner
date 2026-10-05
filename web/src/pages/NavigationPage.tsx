@@ -46,7 +46,7 @@ export function NavigationPage() {
         cells={[
           ['arrive in', `${hours}:${String(mins).padStart(2, '0')}`, 'h'],
           ['left', '245', 'km'],
-          ['on arrival', (lastResult?.assessment.remaining_fuel ?? 4.2).toFixed(1), 'L'],
+          ['fuel left', (lastResult?.assessment.remaining_fuel ?? 4.2).toFixed(1), 'L'],
         ]}
         onEnd={() => navigate('/app/trip-summary')}
       />

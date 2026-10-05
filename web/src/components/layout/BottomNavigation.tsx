@@ -1,44 +1,30 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Map, Fuel, MoreHorizontal, Route } from 'lucide-react'
+import { Home, Map, Fuel, Menu, Route } from 'lucide-react'
 
 const items = [
   { to: '/app', label: 'Home', icon: Home, end: true },
   { to: '/app/map', label: 'Map', icon: Map },
-  { to: '/app/plan', label: 'Plan', icon: Route, primary: true },
+  { to: '/app/plan', label: 'Plan', icon: Route },
   { to: '/app/stations', label: 'Stations', icon: Fuel },
-  { to: '/app/more', label: 'More', icon: MoreHorizontal },
+  { to: '/app/more', label: 'More', icon: Menu },
 ]
 
 export function BottomNavigation() {
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden"
-      aria-label="Main"
-    >
-      <div className="mx-auto flex max-w-xl items-stretch justify-around">
+    <nav className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 lg:hidden" aria-label="Main">
+      <div className="mx-auto flex h-[66px] max-w-xl items-center justify-around rounded-full bg-espresso px-2 shadow-[0_10px_30px_-10px_rgb(43_29_20/0.7)]">
         {items.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.end} className="group relative flex flex-1 flex-col items-center gap-1 pb-2 pt-2.5">
-            {({ isActive }) =>
-              item.primary ? (
-                <>
-                  <span className="flex h-9 w-12 items-center justify-center rounded-sm bg-signal text-signal-ink transition group-hover:bg-signal-hi">
-                    <item.icon className="h-5 w-5" strokeWidth={2.25} />
-                  </span>
-                  <span className="text-[11px] font-semibold text-fg">{item.label}</span>
-                </>
-              ) : (
-                <>
-                  <span
-                    className={`absolute inset-x-5 top-0 h-0.5 rounded-b-sm transition ${isActive ? 'bg-signal' : 'bg-transparent'}`}
-                    aria-hidden
-                  />
-                  <span className="flex h-9 items-center">
-                    <item.icon className={`h-5 w-5 ${isActive ? 'text-fg' : 'text-fg-3'}`} strokeWidth={isActive ? 2.25 : 1.75} />
-                  </span>
-                  <span className={`text-[11px] font-medium ${isActive ? 'text-fg' : 'text-fg-3'}`}>{item.label}</span>
-                </>
-              )
-            }
+          <NavLink key={item.to} to={item.to} end={item.end} aria-label={item.label} className="flex h-12 items-center">
+            {({ isActive }) => (
+              <span
+                className={`flex h-11 items-center gap-2 rounded-full px-4 transition-colors ${
+                  isActive ? 'bg-signal text-signal-ink' : 'text-[#a8957f] hover:text-digit'
+                }`}
+              >
+                <item.icon className="h-[22px] w-[22px]" strokeWidth={2.2} />
+                {isActive && <span className="font-[family-name:var(--font-display)] text-xs tracking-wide">{item.label}</span>}
+              </span>
+            )}
           </NavLink>
         ))}
       </div>
