@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus } from 'lucide-react'
 import { setDefaultVehicle } from '../api/endpoints'
@@ -6,12 +7,15 @@ import { useActiveVehicle } from '../hooks/useActiveVehicle'
 import { PageHeader } from '../components/layout/PageHeader'
 import { VehicleCard } from '../components/VehicleCard'
 import { VehicleAppearancePanel } from '../components/car3d/VehicleAppearancePanel'
+import { Sheet } from '../components/Sheet'
 import { SecondaryButton } from '../components/buttons/SecondaryButton'
 import { CardSkeleton } from '../components/Skeleton'
 
 export function VehiclesPage() {
   const qc = useQueryClient()
-  const { vehicles, vehicle, vehiclesQuery } = useActiveVehicle()
+  const navigate = useNavigate()
+  const { vehicles, vehicle, vehiclesQuery, setSelectedVehicleId } = useActiveVehicle()
+  const [customizing, setCustomizing] = useState(false)
 
   const defaultMutation = useMutation({
     mutationFn: setDefaultVehicle,
@@ -30,6 +34,7 @@ export function VehiclesPage() {
           <Link
             to="/app/vehicles/add"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-800 text-white"
+            aria-label="Add vehicle"
           >
             <Plus className="h-5 w-5" />
           </Link>
@@ -40,14 +45,16 @@ export function VehiclesPage() {
 
       {featured && (
         <>
-          <VehicleAppearancePanel vehicle={featured} />
           <VehicleCard
             vehicle={featured}
             featured
-            show3d={false}
+            onCustomize={() => setCustomizing(true)}
             onSetDefault={() => defaultMutation.mutate(featured.id)}
-            onEdit={() => (window.location.href = `/app/vehicles/add?edit=${featured.id}`)}
+            onEdit={() => navigate(`/app/vehicles/add?edit=${featured.id}`)}
           />
+          <Sheet open={customizing} onClose={() => setCustomizing(false)} title={`Customize ${featured.make} ${featured.model}`}>
+            {customizing && <VehicleAppearancePanel vehicle={featured} onSaved={() => setCustomizing(false)} />}
+          </Sheet>
         </>
       )}
 
@@ -56,7 +63,7 @@ export function VehiclesPage() {
           <h2 className="mb-3 text-sm font-semibold text-muted">Other Vehicles</h2>
           <div className="space-y-3">
             {others.map((v) => (
-              <VehicleCard key={v.id} vehicle={v} compact />
+              <VehicleCard key={v.id} vehicle={v} compact onSelect={() => setSelectedVehicleId(v.id)} />
             ))}
           </div>
         </div>

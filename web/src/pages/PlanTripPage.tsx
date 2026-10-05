@@ -1,7 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
-import { calculateTrip } from '../api/endpoints'
-import { useActiveVehicle } from '../hooks/useActiveVehicle'
+import { useTripCalculation } from '../hooks/useTripCalculation'
 import { useTripStore } from '../store/tripStore'
 import { PageHeader } from '../components/layout/PageHeader'
 import { TripInput } from '../components/TripInput'
@@ -11,29 +8,10 @@ import { Card, ToggleRow } from '../components/ui'
 import { formatLiters, formatPricePerLiter } from '../lib/format'
 
 export function PlanTripPage() {
-  const navigate = useNavigate()
-  const { vehicle, fuelPricePerLiter } = useActiveVehicle()
-  const { draft, setDraft, setLastResult } = useTripStore()
+  const { draft, setDraft } = useTripStore()
+  const { vehicle, fuelPricePerLiter, calculate, isPending, isError } = useTripCalculation()
 
   const fuelLiters = vehicle?.estimated_fuel_liters ?? 30
-
-  const calcMutation = useMutation({
-    mutationFn: () =>
-      calculateTrip({
-        vehicle_id: vehicle?.id,
-        origin: draft.origin,
-        destination: draft.destination,
-        trip_type: draft.trip_type === 'multi_stop' ? 'one_way' : draft.trip_type,
-        consumption_profile: draft.profile,
-        fuel_price_per_liter: fuelPricePerLiter,
-      }),
-    onSuccess: (result) => {
-      setLastResult(result)
-      sessionStorage.setItem('lastTripResult', JSON.stringify(result))
-      sessionStorage.setItem('lastTripPlan', JSON.stringify(draft))
-      navigate('/app/trip-result')
-    },
-  })
 
   return (
     <div className="space-y-6">
@@ -88,18 +66,18 @@ export function PlanTripPage() {
         </div>
       </Card>
 
-      {calcMutation.isError && (
+      {isError && (
         <Card>
           <p className="font-semibold text-red-700">We couldn&apos;t calculate your route.</p>
           <p className="mt-1 text-sm text-muted">Check your destination and try again.</p>
-          <PrimaryButton className="mt-4" onClick={() => calcMutation.mutate()}>Retry</PrimaryButton>
+          <PrimaryButton className="mt-4" onClick={() => calculate()}>Retry</PrimaryButton>
         </Card>
       )}
 
       <PrimaryButton
         fullWidth
-        disabled={!vehicle || calcMutation.isPending}
-        onClick={() => calcMutation.mutate()}
+        disabled={!vehicle || isPending}
+        onClick={() => calculate()}
       >
         Show Results →
       </PrimaryButton>

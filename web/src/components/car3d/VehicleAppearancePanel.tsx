@@ -4,21 +4,21 @@ import type { Vehicle } from '../../api/types'
 import { updateVehicle } from '../../api/endpoints'
 import { CarViewer } from './CarViewer'
 import { VehicleColorPicker } from './VehicleColorPicker'
+import { BodyStylePicker } from './BodyStylePicker'
+import { CustomModelUrlField } from './CustomModelUrlField'
 import { PrimaryButton } from '../buttons/PrimaryButton'
-import { InputField, SectionLabel, Card } from '../ui'
-import type { VehicleBodyType } from '../../config/vehicleModels'
+import { resolveBodyType, resolvePaint, type VehicleBodyType } from '../../config/vehicleModels'
 
 type Props = {
   vehicle: Vehicle
+  onSaved?: () => void
 }
 
-export function VehicleAppearancePanel({ vehicle }: Props) {
+export function VehicleAppearancePanel({ vehicle, onSaved }: Props) {
   const qc = useQueryClient()
-  const [paint, setPaint] = useState(vehicle.paint_color ?? '#f8fafc')
+  const [paint, setPaint] = useState(resolvePaint(vehicle.make, vehicle.paint_color))
   const [modelUrl, setModelUrl] = useState(vehicle.model_3d_url ?? '')
-  const [bodyStyle, setBodyStyle] = useState<VehicleBodyType>(
-    (vehicle.body_style as VehicleBodyType) || 'sedan',
-  )
+  const [bodyStyle, setBodyStyle] = useState<VehicleBodyType>(resolveBodyType(vehicle))
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -27,13 +27,16 @@ export function VehicleAppearancePanel({ vehicle }: Props) {
         model_3d_url: modelUrl.trim() || null,
         body_style: bodyStyle,
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['vehicles'] }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['vehicles'] })
+      onSaved?.()
+    },
   })
 
-  const previewVehicle = { ...vehicle, make: vehicle.make, model: vehicle.model, paint_color: paint, model_3d_url: modelUrl || undefined, body_style: bodyStyle }
+  const previewVehicle = { ...vehicle, paint_color: paint, model_3d_url: modelUrl || undefined, body_style: bodyStyle }
 
   return (
-    <Card className="space-y-4 p-0 overflow-hidden" featured>
+    <div>
       <CarViewer
         vehicle={previewVehicle}
         variant="card"
@@ -42,42 +45,19 @@ export function VehicleAppearancePanel({ vehicle }: Props) {
         bodyType={bodyStyle}
         paintOverride={paint}
         modelUrlOverride={modelUrl.trim() || undefined}
+        className="!rounded-none"
       />
-      <div className="space-y-4 p-5">
+      <div className="space-y-5 p-5">
         <VehicleColorPicker value={paint} onChange={setPaint} />
-        <label className="block text-sm">
-          <SectionLabel>Body style (3D model)</SectionLabel>
-          <select
-            className="input-field mt-1"
-            value={bodyStyle}
-            onChange={(e) => setBodyStyle(e.target.value as VehicleBodyType)}
-          >
-            <option value="sedan">Sedan</option>
-            <option value="suv">SUV</option>
-            <option value="hatchback">Hatchback</option>
-          </select>
-        </label>
-        <label className="block text-sm">
-          <SectionLabel>Custom 3D model URL (optional)</SectionLabel>
-          <InputField
-            className="mt-1 font-mono text-xs"
-            placeholder="/models/sedan.glb or https://…"
-            value={modelUrl}
-            onChange={(e) => setModelUrl(e.target.value)}
-          />
-          <p className="mt-1 text-xs text-muted">
-            Optional. Leave empty for the built-in stylized car. Paste a URL only when you have a real licensed .glb model.
-          </p>
-        </label>
-        <PrimaryButton
-          fullWidth
-          size="md"
-          disabled={saveMutation.isPending}
-          onClick={() => saveMutation.mutate()}
-        >
-          {saveMutation.isSuccess ? 'Saved' : 'Save appearance'}
+        <BodyStylePicker value={bodyStyle} paint={paint} onChange={setBodyStyle} />
+        <CustomModelUrlField value={modelUrl} onChange={setModelUrl} />
+        {saveMutation.isError && (
+          <p className="text-sm font-medium text-red-700" role="alert">Couldn&apos;t save. Try again.</p>
+        )}
+        <PrimaryButton fullWidth size="md" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+          {saveMutation.isPending ? 'Saving…' : 'Save appearance'}
         </PrimaryButton>
       </div>
-    </Card>
+    </div>
   )
 }

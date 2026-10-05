@@ -4,10 +4,11 @@ import { getVehicleModelConfig, type VehicleBodyType } from '../../config/vehicl
 
 const CarSceneCanvas = lazy(() => import('./CarSceneCanvas'))
 
-export type CarViewerVariant = 'hero' | 'card' | 'thumb'
+export type CarViewerVariant = 'hero' | 'banner' | 'card' | 'thumb'
 
 const HEIGHT: Record<CarViewerVariant, string> = {
   hero: 'min-h-[260px] h-[min(42vh,320px)]',
+  banner: 'h-[190px] sm:h-[220px]',
   card: 'h-[220px]',
   thumb: 'h-[72px] w-[96px]',
 }
@@ -52,7 +53,7 @@ export function CarViewer({
       className={`relative overflow-hidden ${isThumb ? 'rounded-xl' : 'rounded-t-3xl'} bg-gradient-to-b from-slate-100 via-white to-brand-50/40 ${HEIGHT[variant]} ${className}`}
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_120%,rgba(34,197,94,0.12),transparent_55%)]" />
-      {!isThumb && (
+      {!isThumb && variant !== 'banner' && (
         <div className="absolute left-4 top-4 z-10 rounded-full border border-white/70 bg-white/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-800 shadow-sm backdrop-blur">
           3D preview
         </div>

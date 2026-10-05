@@ -3,26 +3,31 @@ import { PrimaryButton } from './buttons/PrimaryButton'
 import { formatConsumption, formatLiters } from '../lib/format'
 import type { Vehicle } from '../api/types'
 import { CarViewer } from './car3d/CarViewer'
+import { VehicleSilhouette } from './car3d/VehicleSilhouette'
+import { resolveBodyType, resolvePaint } from '../config/vehicleModels'
 
 type Props = {
   vehicle: Vehicle
   featured?: boolean
   onSetDefault?: () => void
   onEdit?: () => void
+  onCustomize?: () => void
+  onSelect?: () => void
   compact?: boolean
   show3d?: boolean
 }
 
-export function VehicleCard({ vehicle, featured, onSetDefault, onEdit, compact, show3d = true }: Props) {
+export function VehicleCard({ vehicle, featured, onSetDefault, onEdit, onCustomize, onSelect, compact, show3d = true }: Props) {
   if (compact) {
     return (
-      <div className="card-surface flex items-center gap-3 p-3">
-        <CarViewer vehicle={vehicle} variant="thumb" autoRotate={false} />
+      <button type="button" onClick={onSelect} className="card-surface card-interactive flex w-full items-center gap-3 p-3 text-left">
+        <VehicleThumb vehicle={vehicle} />
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-ink">{vehicle.make} {vehicle.model}</p>
           <p className="text-xs text-muted">{vehicle.year} • {vehicle.engine} • {vehicle.fuel_type}</p>
         </div>
-      </div>
+        {onSelect && <span className="text-xs font-semibold text-brand-800">Select</span>}
+      </button>
     )
   }
 
@@ -58,9 +63,14 @@ export function VehicleCard({ vehicle, featured, onSetDefault, onEdit, compact, 
           </div>
         </div>
         {featured && (
-          <div className="mt-5 flex gap-3">
+          <div className="mt-5 flex flex-wrap gap-3">
+            {onCustomize && (
+              <SecondaryButton className="flex-1 py-3 text-sm" onClick={onCustomize} type="button">
+                Customize look
+              </SecondaryButton>
+            )}
             <SecondaryButton className="flex-1 py-3 text-sm" onClick={onEdit} type="button">
-              Edit
+              Edit details
             </SecondaryButton>
             {!vehicle.is_default && (
               <PrimaryButton className="flex-1 py-3 text-sm" onClick={onSetDefault} type="button">
@@ -87,11 +97,24 @@ export function VehicleSelectorChip({
       onClick={onClick}
       className="card-surface card-interactive flex w-full items-center gap-3 p-2 text-left"
     >
-      <CarViewer vehicle={vehicle} variant="thumb" className="!h-[72px] !w-[96px] shrink-0" />
+      <VehicleThumb vehicle={vehicle} />
       <div className="min-w-0 text-left">
         <p className="font-semibold text-ink">{vehicle.make} {vehicle.model}</p>
         <p className="text-xs text-muted">{vehicle.year} • {vehicle.engine} • {vehicle.fuel_type}</p>
       </div>
     </button>
+  )
+}
+
+/** Flat silhouette thumbnail — list rows must not each open a WebGL context. */
+function VehicleThumb({ vehicle }: { vehicle: Vehicle }) {
+  return (
+    <span className="flex h-[60px] w-[88px] shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-slate-100 to-white px-1.5">
+      <VehicleSilhouette
+        bodyType={resolveBodyType(vehicle)}
+        paint={resolvePaint(vehicle.make, vehicle.paint_color)}
+        className="w-full text-slate-900"
+      />
+    </span>
   )
 }

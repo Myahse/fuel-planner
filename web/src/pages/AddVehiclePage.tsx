@@ -6,6 +6,8 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { PrimaryButton } from '../components/buttons/PrimaryButton'
 import { Card, InputField, SectionLabel } from '../components/ui'
 import { CarViewer } from '../components/car3d/CarViewer'
+import { BodyStylePicker } from '../components/car3d/BodyStylePicker'
+import { CustomModelUrlField } from '../components/car3d/CustomModelUrlField'
 import { VehicleColorPicker } from '../components/car3d/VehicleColorPicker'
 import type { VehicleBodyType } from '../config/vehicleModels'
 import { resolvePaint } from '../config/vehicleModels'
@@ -81,28 +83,9 @@ export function AddVehiclePage() {
           value={paint}
           onChange={(c) => setPaint(c)}
         />
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="text-sm sm:col-span-2">
-            <SectionLabel>Body style (3D)</SectionLabel>
-            <select
-              className="input-field mt-1"
-              value={bodyStyle}
-              onChange={(e) => setBodyStyle(e.target.value as VehicleBodyType)}
-            >
-              <option value="sedan">Sedan</option>
-              <option value="suv">SUV</option>
-              <option value="hatchback">Hatchback</option>
-            </select>
-          </label>
-          <label className="text-sm sm:col-span-2">
-            <SectionLabel>Custom model URL (optional)</SectionLabel>
-            <InputField
-              className="mt-1 font-mono text-xs"
-              value={modelUrl}
-              onChange={(e) => setModelUrl(e.target.value)}
-              placeholder="/models/sedan.glb"
-            />
-          </label>
+        <div className="mt-5 space-y-5">
+          <BodyStylePicker value={bodyStyle} paint={paint} onChange={setBodyStyle} />
+          <CustomModelUrlField value={modelUrl} onChange={setModelUrl} />
         </div>
       </Card>
 

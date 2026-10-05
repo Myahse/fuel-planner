@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom'
-import { Settings, BarChart3, Car, Droplets, User } from 'lucide-react'
+import { Settings, BarChart3, Car, Droplets, History, User } from 'lucide-react'
 import { PRODUCT } from '../config/product'
 import { useAppStore } from '../store/appStore'
 
 export function MorePage() {
   const { displayName } = useAppStore()
   const links = [
+    { to: '/app/history', label: 'Trip History', icon: History },
     { to: '/app/statistics', label: 'Statistics', icon: BarChart3 },
     { to: '/app/settings', label: 'Settings', icon: Settings },
     { to: '/app/vehicles', label: 'My Vehicles', icon: Car },
