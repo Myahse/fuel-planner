@@ -103,7 +103,7 @@ export function VehicleHeroCard({ vehicle, vehicles, onSelect, percent, liters, 
       </TankCard>
 
       {destinations.length > 0 && (
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="group" aria-label="Preview a past trip">
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="group" aria-label="Preview a trip">
           <button type="button" className="chip" aria-pressed={!trip.destination} onClick={trip.clear}>
             Now
           </button>

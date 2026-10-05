@@ -13,6 +13,8 @@ import { CardSkeleton } from '../components/Skeleton'
 import { STATIONS_NEARBY_RADIUS_KM } from '../config/stations'
 import { shortPlace } from '../lib/format'
 
+const DEFAULT_DESTINATIONS = ['Yamoussoukro', 'Bouaké', 'San-Pédro', 'Korhogo']
+
 function shortDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
@@ -48,7 +50,9 @@ export function DashboardPage() {
   const lastFill = txQuery.data?.[0]
   const lastTrip = tripsQuery.data?.find((t) => !vehicle || t.vehicle_id === vehicle.id) ?? tripsQuery.data?.[0]
   const nearbyStation = nearbyStationsQuery.data?.stations[0]
-  const destinations = [...new Set((tripsQuery.data ?? []).map((t) => shortPlace(t.destination)))].slice(0, 6)
+  // Past destinations first; until there are enough, common long trips keep the gauge preview useful.
+  const recent = [...new Set((tripsQuery.data ?? []).map((t) => shortPlace(t.destination)))]
+  const destinations = [...new Set([...recent, ...DEFAULT_DESTINATIONS])].slice(0, Math.max(4, Math.min(6, recent.length)))
 
   if (vehiclesQuery.isLoading) return <CardSkeleton />
 
@@ -84,14 +88,26 @@ export function DashboardPage() {
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Tile
-          to="/app/stations"
-          icon={<Fuel className="h-4 w-4" />}
-          label="Fuel nearby"
-          value={nearbyStation ? formatStationPrice(nearbyStation.price_per_liter, fuelPricePerLiter) : '—'}
-          unit="F/L"
-          hint={nearbyStation?.brand || nearbyStation?.name || 'Plan a trip for route stops'}
-        />
+        {/* Live stations come without pump prices, so lead with distance and show the price you set. */}
+        {nearbyStation ? (
+          <Tile
+            to="/app/stations"
+            icon={<Fuel className="h-4 w-4" />}
+            label="Nearest fuel"
+            value={nearbyStation.distance_km_from_start.toFixed(1)}
+            unit="km"
+            hint={`${nearbyStation.brand || nearbyStation.name} · ${formatStationPrice(nearbyStation.price_per_liter, fuelPricePerLiter)} F/L`}
+          />
+        ) : (
+          <Tile
+            to="/app/stations"
+            icon={<Fuel className="h-4 w-4" />}
+            label="Pump price"
+            value={Math.round(fuelPricePerLiter).toLocaleString('en-US')}
+            unit="F/L"
+            hint={userLocation ? 'No station found nearby' : 'Share location for stations'}
+          />
+        )}
         <Tile
           to="/app/statistics"
           icon={<Droplets className="h-4 w-4" />}

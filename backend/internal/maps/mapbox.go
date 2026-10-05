@@ -20,6 +20,7 @@ type MapboxProvider struct {
 	baseURL  string
 	client   *http.Client
 	stations StationSearchSettings
+	cache    *stationCache
 }
 
 func NewMapboxProvider(token, country string) *MapboxProvider {
@@ -29,6 +30,7 @@ func NewMapboxProvider(token, country string) *MapboxProvider {
 		baseURL:  "https://api.mapbox.com",
 		client:   &http.Client{Timeout: 20 * time.Second},
 		stations: StationSearchSettings{}.WithDefaults(),
+		cache:    newStationCache(),
 	}
 }
 
@@ -140,10 +142,10 @@ func (m *MapboxProvider) GetRoute(ctx context.Context, req RouteRequest) (*Route
 	}
 	driving := mapboxDrivingProfile(req.Profile)
 	q := url.Values{
-		"geometries":    {"polyline6"},
-		"overview":      {"full"},
-		"alternatives":  {"false"},
-		"access_token":  {m.token},
+		"geometries":   {"polyline6"},
+		"overview":     {"full"},
+		"alternatives": {"false"},
+		"access_token": {m.token},
 	}
 	var res directionsResponse
 	if err := m.get(ctx, "/directions/v5/mapbox/"+driving+"/"+strings.Join(coords, ";"), q, &res); err != nil {

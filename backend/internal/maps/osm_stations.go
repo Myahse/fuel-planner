@@ -49,14 +49,30 @@ func searchOSMFuelNear(ctx context.Context, lat, lng, radiusKm float64, limit in
 	return out, nil
 }
 
+// photonFuelNearOnce is a single Photon query filtered to fuel amenities within radiusKm.
+func photonFuelNearOnce(ctx context.Context, lat, lng, radiusKm float64, limit int) ([]Station, error) {
+	batch, err := photonFuelSearch(ctx, "station", lat, lng, limit)
+	if err != nil {
+		return nil, err
+	}
+	near := LatLng{Lat: lat, Lng: lng}
+	out := batch[:0]
+	for _, st := range batch {
+		if haversineKm(near, LatLng{Lat: st.Lat, Lng: st.Lng}) <= radiusKm {
+			out = append(out, st)
+		}
+	}
+	return out, nil
+}
+
 func photonFuelSearch(ctx context.Context, query string, lat, lng float64, limit int) ([]Station, error) {
 	q := url.Values{
-		"q":        {query},
-		"lat":      {fmt.Sprintf("%.6f", lat)},
-		"lon":      {fmt.Sprintf("%.6f", lng)},
-		"limit":    {fmt.Sprintf("%d", limit)},
-		"osm_tag":  {"amenity:fuel"},
-		"lang":     {"fr"},
+		"q":       {query},
+		"lat":     {fmt.Sprintf("%.6f", lat)},
+		"lon":     {fmt.Sprintf("%.6f", lng)},
+		"limit":   {fmt.Sprintf("%d", limit)},
+		"osm_tag": {"amenity:fuel"},
+		"lang":    {"fr"},
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, photonAPIURL+"?"+q.Encode(), nil)
 	if err != nil {

@@ -10,6 +10,10 @@ import (
 )
 
 func TestLiveNearbyStations(t *testing.T) {
+	// Calls Mapbox and OpenStreetMap for real, so it only runs when asked for.
+	if os.Getenv("RUN_LIVE_TESTS") != "1" {
+		t.Skip("set RUN_LIVE_TESTS=1 to call the live Mapbox and OpenStreetMap APIs")
+	}
 	_ = godotenv.Load(filepath.Join("..", "..", ".env"))
 	key := os.Getenv("MAP_API_KEY")
 	if key == "" || os.Getenv("MAP_PROVIDER") != "mapbox" {

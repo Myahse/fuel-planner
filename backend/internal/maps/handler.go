@@ -46,6 +46,8 @@ type stationJSON struct {
 
 func (h *Handler) StationsAlongRoute(w http.ResponseWriter, r *http.Request) {
 	var req alongRouteRequest
+	// A polyline6 for a long cross-country route is well under 1 MB.
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		httputil.Error(w, http.StatusBadRequest, "invalid JSON body")
 		return
@@ -54,10 +56,7 @@ func (h *Handler) StationsAlongRoute(w http.ResponseWriter, r *http.Request) {
 		httputil.Error(w, http.StatusBadRequest, "route_polyline and distance_km are required")
 		return
 	}
-	maxDetour := req.MaxDetourKm
-	if maxDetour <= 0 {
-		maxDetour = h.stations.DefaultMaxDetourKm
-	}
+	maxDetour := ClampKm(req.MaxDetourKm, h.stations.DefaultMaxDetourKm, MaxDetourKmLimit)
 	stations, err := h.provider.GetStationsAlongRoute(r.Context(), Route{
 		Polyline:   req.RoutePolyline,
 		DistanceKm: req.DistanceKm,
@@ -80,14 +79,14 @@ func (h *Handler) StationsAlongRoute(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) StationsNearby(w http.ResponseWriter, r *http.Request) {
 	lat, err1 := strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
 	lng, err2 := strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
-	if err1 != nil || err2 != nil {
-		httputil.Error(w, http.StatusBadRequest, "lat and lng query parameters are required")
+	if err1 != nil || err2 != nil || lat < -90 || lat > 90 || lng < -180 || lng > 180 {
+		httputil.Error(w, http.StatusBadRequest, "lat and lng query parameters are required and must be valid coordinates")
 		return
 	}
 	radius := h.stations.NearbyRadiusKm
 	if v := r.URL.Query().Get("radius_km"); v != "" {
 		if parsed, err := strconv.ParseFloat(v, 64); err == nil && parsed > 0 {
-			radius = parsed
+			radius = ClampKm(parsed, radius, MaxNearbyRadiusKmLimit)
 		}
 	}
 	stations, err := h.provider.GetNearbyStations(r.Context(), lat, lng, radius)

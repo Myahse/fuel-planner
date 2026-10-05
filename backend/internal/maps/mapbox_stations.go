@@ -21,15 +21,15 @@ type searchboxFeature struct {
 		Coordinates []float64 `json:"coordinates"`
 	} `json:"geometry"`
 	Properties struct {
-		Name          string   `json:"name"`
-		NamePreferred string   `json:"name_preferred"`
-		MapboxID      string   `json:"mapbox_id"`
-		FeatureType   string   `json:"feature_type"`
+		Name           string   `json:"name"`
+		NamePreferred  string   `json:"name_preferred"`
+		MapboxID       string   `json:"mapbox_id"`
+		FeatureType    string   `json:"feature_type"`
 		PoiCategoryIDs []string `json:"poi_category_ids"`
-		Maki          string   `json:"maki"`
-		FullAddress   string   `json:"full_address"`
-		Place         string   `json:"place_formatted"`
-		Context       struct {
+		Maki           string   `json:"maki"`
+		FullAddress    string   `json:"full_address"`
+		Place          string   `json:"place_formatted"`
+		Context        struct {
 			Place *struct {
 				Name string `json:"name"`
 			} `json:"place"`
@@ -59,6 +59,10 @@ type geocodeV5Response struct {
 }
 
 func (m *MapboxProvider) GetNearbyStations(ctx context.Context, lat, lng float64, radiusKm float64) ([]Station, error) {
+	key := nearbyCacheKey(lat, lng, radiusKm)
+	if cached, ok := m.cache.get(key); ok {
+		return cached, nil
+	}
 	limit := m.stations.NearbyLimit
 	if radiusKm > 0 && radiusKm < 15 && limit > 15 {
 		limit = 15
@@ -78,6 +82,7 @@ func (m *MapboxProvider) GetNearbyStations(ctx context.Context, lat, lng float64
 		out = append(out, st)
 	}
 	sortStationsByDistance(out)
+	m.cache.put(key, out)
 	return out, nil
 }
 
@@ -92,9 +97,14 @@ func (m *MapboxProvider) GetStationsAlongRoute(ctx context.Context, route Route,
 	if route.DistanceKm <= 0 {
 		route.DistanceKm = polylineLengthKm(poly)
 	}
+	key := routeCacheKey(route.Polyline, maxDetourKm)
+	if cached, ok := m.cache.get(key); ok {
+		return cached, nil
+	}
 
 	merged := dedupeStations(m.collectAlongRoute(ctx, route.Polyline, poly, maxDetourKm), 120)
 	if len(merged) == 0 {
+		// Not cached: an empty result is often a network blip, worth retrying next time.
 		return nil, nil
 	}
 	out := attachStationsToRoute(merged, poly, route.DistanceKm, maxDetourKm)
@@ -106,6 +116,7 @@ func (m *MapboxProvider) GetStationsAlongRoute(ctx context.Context, route Route,
 		}
 		out = attachStationsToRoute(merged, poly, route.DistanceKm, relaxed)
 	}
+	m.cache.put(key, out)
 	return out, nil
 }
 
@@ -149,7 +160,7 @@ func (m *MapboxProvider) collectAlongRoute(ctx context.Context, encodedPolyline 
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			batch, err := m.searchGasNear(ctx, lat, lng, sampleLimit, sampleRadius)
+			batch, err := m.searchGasNearLean(ctx, lat, lng, sampleLimit, sampleRadius)
 			if err != nil {
 				return
 			}
@@ -160,6 +171,31 @@ func (m *MapboxProvider) collectAlongRoute(ctx context.Context, encodedPolyline 
 	}
 	wg.Wait()
 	return out
+}
+
+// searchGasNearLean is the per-sample search along a route: the Search Box category API,
+// then one OpenStreetMap (Photon) query. At most three calls per point, against the
+// dozen-plus of the full searchGasNear chain, which stays for single-point lookups.
+func (m *MapboxProvider) searchGasNearLean(ctx context.Context, lat, lng float64, limit int, radiusKm float64) ([]Station, error) {
+	q := url.Values{
+		"proximity":    {fmt.Sprintf("%.6f,%.6f", lng, lat)},
+		"limit":        {fmt.Sprintf("%d", limit)},
+		"language":     {"fr"},
+		"access_token": {m.token},
+	}
+	if m.country != "" {
+		q.Set("country", m.country)
+	}
+	q.Set("radius", fmt.Sprintf("%.5f", math.Min(0.35, radiusKm/111.0)))
+	for _, cat := range []string{"gas_station", "fuel"} {
+		var res searchboxCategoryResponse
+		if err := m.categorySearch(ctx, cat, q, &res); err == nil {
+			if stations := stationsFromSearchbox(res.Features); len(stations) > 0 {
+				return stations, nil
+			}
+		}
+	}
+	return photonFuelNearOnce(ctx, lat, lng, radiusKm, limit)
 }
 
 func (m *MapboxProvider) searchGasAlongRoute(ctx context.Context, polyline string, maxDetourKm float64) ([]Station, error) {
@@ -641,13 +677,13 @@ func coordsFromFeature(f searchboxFeature) (lat, lng float64, ok bool) {
 func sampleCountForTrip(distanceKm float64) int {
 	switch {
 	case distanceKm < 40:
-		return 5
+		return 4
 	case distanceKm < 120:
-		return 8
+		return 6
 	case distanceKm < 250:
-		return 12
+		return 8
 	default:
-		return 16
+		return 10
 	}
 }
 

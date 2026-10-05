@@ -9,19 +9,33 @@ type StationSearchSettings struct {
 	SampleSearchLimit  int
 }
 
+// Upper bounds on search distances, from env or a request: anything wider means huge
+// OpenStreetMap queries and stations no driver would detour to.
+const (
+	MaxDetourKmLimit       = 50.0
+	MaxNearbyRadiusKmLimit = 50.0
+)
+
+// ClampKm keeps a requested distance within (0, max]; zero or negative means use fallback.
+func ClampKm(v, fallback, max float64) float64 {
+	if v <= 0 {
+		v = fallback
+	}
+	if v > max {
+		return max
+	}
+	return v
+}
+
 func (s StationSearchSettings) WithDefaults() StationSearchSettings {
 	out := s
-	if out.DefaultMaxDetourKm <= 0 {
-		out.DefaultMaxDetourKm = 12
-	}
+	out.DefaultMaxDetourKm = ClampKm(out.DefaultMaxDetourKm, 12, MaxDetourKmLimit)
+	out.NearbyRadiusKm = ClampKm(out.NearbyRadiusKm, 30, MaxNearbyRadiusKmLimit)
 	if out.AlongRouteLimit <= 0 {
 		out.AlongRouteLimit = 25
 	}
 	if out.AlongRouteLimit > 50 {
 		out.AlongRouteLimit = 50
-	}
-	if out.NearbyRadiusKm <= 0 {
-		out.NearbyRadiusKm = 30
 	}
 	if out.NearbyLimit <= 0 {
 		out.NearbyLimit = 40
