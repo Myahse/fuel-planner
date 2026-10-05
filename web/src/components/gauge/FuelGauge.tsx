@@ -1,5 +1,6 @@
 import { useId, useRef, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from 'react'
-import { colors, fuelPalettes } from '../../design/tokens'
+import { fuelPalettes, themeColors } from '../../design/tokens'
+import { useResolvedTheme } from '../../hooks/useResolvedTheme'
 import type { FuelStatus } from '../liquid/LiquidTank'
 
 type Props = {
@@ -50,9 +51,15 @@ export function FuelGauge({ value, ghost = null, status = 'ok', reserve = 0.1, b
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '')
   const svg = useRef<SVGSVGElement>(null)
   const [dragging, setDragging] = useState(false)
+  const resolvedTheme = useResolvedTheme()
+  const colors = themeColors(resolvedTheme)
   const v = clamp(value)
   const pal = fuelPalettes[status]
   const height = compact ? 204 : 252
+  const faceStops =
+    resolvedTheme === 'light'
+      ? { inner: '#f5f0e8', outer: '#e8e0d4' }
+      : { inner: '#2a2016', outer: '#120d08' }
 
   const ticks = []
   for (let i = 0; i <= bars * 2; i++) {
@@ -129,17 +136,14 @@ export function FuelGauge({ value, ghost = null, status = 'ok', reserve = 0.1, b
       >
         <defs>
           <radialGradient id={`${id}-face`} cx="50%" cy="45%" r="60%">
-            <stop offset="0" stopColor="#2a2016" />
-            <stop offset="1" stopColor="#120d08" />
+            <stop offset="0" stopColor={faceStops.inner} />
+            <stop offset="1" stopColor={faceStops.outer} />
           </radialGradient>
           <linearGradient id={`${id}-arc`} x1="0" x2="1">
             <stop offset="0" stopColor={pal[2]} />
             <stop offset=".6" stopColor={pal[1]} />
             <stop offset="1" stopColor={pal[0]} />
           </linearGradient>
-          <filter id={`${id}-glow`} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4" />
-          </filter>
         </defs>
 
         <circle cx={CX} cy={CY} r={R + 14} fill={`url(#${id}-face)`} stroke={colors.lineStrong} strokeWidth="2" />
@@ -169,8 +173,8 @@ export function FuelGauge({ value, ghost = null, status = 'ok', reserve = 0.1, b
           <line x1={CX} y1={CY} x2={CX} y2={CY - R + 22} stroke={colors.fg} strokeWidth="3" strokeLinecap="round" strokeDasharray="4 5" />
         </g>
         <g className="gauge-needle" style={{ ...needleStyle, transform: `rotate(${rot(v)}deg)` }}>
-          <line x1={CX} y1={CY + 14} x2={CX} y2={CY - R + 16} stroke={pal[1]} strokeWidth="7" strokeLinecap="round" filter={`url(#${id}-glow)`} opacity="0.7" />
-          <line x1={CX} y1={CY + 14} x2={CX} y2={CY - R + 16} stroke={colors.fg} strokeWidth="4" strokeLinecap="round" />
+          <line x1={CX} y1={CY + 14} x2={CX} y2={CY - R + 16} stroke={pal[1]} strokeWidth="5" strokeLinecap="round" />
+          <line x1={CX} y1={CY + 14} x2={CX} y2={CY - R + 16} stroke={colors.fg} strokeWidth="3" strokeLinecap="round" />
         </g>
         <circle cx={CX} cy={CY} r="11" fill={colors.fg} />
         <circle cx={CX} cy={CY} r="5" fill={pal[1]} />

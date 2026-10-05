@@ -37,7 +37,7 @@ export function Sidebar() {
                   end={item.end}
                   className={({ isActive }) =>
                     `flex items-center gap-3 rounded-full px-4 py-2.5 text-[15px] font-bold transition ${
-                      isActive ? 'bg-fg text-signal-ink' : 'text-fg-2 hover:bg-fg/8 hover:text-fg'
+                      isActive ? 'bg-fg text-bg' : 'text-fg-2 hover:bg-fg/8 hover:text-fg'
                     }`
                   }
                 >

@@ -3,6 +3,12 @@ import { MAPBOX_COUNTRY, MAPBOX_TOKEN } from '../config/mapbox'
 
 export type PlaceSuggestion = { id: string; name: string; context: string; lat: number; lng: number }
 
+export function placeSuggestionLabel(p: PlaceSuggestion): string {
+  const name = p.name.trim()
+  const ctx = p.context.trim()
+  return ctx ? `${name}, ${ctx}` : name
+}
+
 type GeocodeFeature = {
   id: string
   geometry: { coordinates: [number, number] }

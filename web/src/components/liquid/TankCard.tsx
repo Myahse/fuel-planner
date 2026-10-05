@@ -16,7 +16,7 @@ export function TankCard({ level, status, reserve, bars, onLevelChange, children
   return (
     <div className={`relative overflow-hidden rounded-[22px] border border-fg/10 bg-panel ${className}`}>
       <LiquidTank level={level} status={status} reserve={reserve} bars={bars} onLevelChange={onLevelChange} className="absolute inset-0" />
-      {children && <div className="pointer-events-none relative flex h-full items-end justify-between gap-3 px-4 pb-3 drop-shadow-[0_1px_8px_rgb(16_12_8/0.7)]">{children}</div>}
+      {children && <div className="pointer-events-none relative flex h-full items-end justify-between gap-3 px-4 pb-3">{children}</div>}
     </div>
   )
 }

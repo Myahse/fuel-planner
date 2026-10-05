@@ -38,7 +38,7 @@ export function OnboardingPage() {
             Tell FUELGO how many bars your gauge shows. Before you leave, it tells you whether you&apos;ll make it, what it costs, and where to refuel.
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <Link to="/auth?mode=register" className="btn btn-ghost !bg-fg !text-signal-ink sm:flex-1">
+            <Link to="/auth?mode=register" className="btn btn-ghost !bg-fg !text-bg sm:flex-1">
               Get started
             </Link>
             <Link to="/auth?mode=login" className="btn btn-ghost sm:flex-1">

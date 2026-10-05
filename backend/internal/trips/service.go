@@ -10,6 +10,10 @@ import (
 )
 
 func consumptionForProfile(v *vehicles.Vehicle, profile string) float64 {
+	const defaultLPer100 = 8.0
+	if v == nil {
+		return defaultLPer100
+	}
 	switch strings.ToLower(profile) {
 	case "city":
 		if v.CityConsumption != nil && *v.CityConsumption > 0 {
@@ -20,7 +24,10 @@ func consumptionForProfile(v *vehicles.Vehicle, profile string) float64 {
 			return *v.HighwayConsumption
 		}
 	}
-	return v.MixedConsumption
+	if v.MixedConsumption > 0 {
+		return v.MixedConsumption
+	}
+	return defaultLPer100
 }
 
 func durationMultiplier(tripType string) int {
@@ -34,8 +41,10 @@ type TripInput struct {
 	VehicleID          string
 	Origin             string
 	Destination        string
+	Waypoints          []string
 	TripType           string
 	ConsumptionProfile string
+	RouteProfile       string // fastest, efficient, cheapest — maps to Mapbox driving profiles
 	FuelPricePerLiter  float64
 }
 
@@ -57,10 +66,14 @@ type TripComputation struct {
 	Assessment               fuelcalc.TripFuelAssessment
 	MapProvider              string
 	RoutePolyline            string
+	WaypointCount            int
 	FuelPricePerLiter        float64
 }
 
 func ComputeTrip(ctx context.Context, mapProvider maps.MapProvider, v *vehicles.Vehicle, in TripInput) (*TripComputation, error) {
+	if v == nil {
+		return nil, errVehicleRequired
+	}
 	originPlaces, err := mapProvider.Geocode(ctx, in.Origin)
 	if err != nil || len(originPlaces) == 0 {
 		return nil, errGeocodeOrigin
@@ -70,10 +83,28 @@ func ComputeTrip(ctx context.Context, mapProvider maps.MapProvider, v *vehicles.
 		return nil, errGeocodeDestination
 	}
 
+	var waypointPlaces []maps.Place
+	for _, raw := range in.Waypoints {
+		q := strings.TrimSpace(raw)
+		if q == "" {
+			continue
+		}
+		wp, err := mapProvider.Geocode(ctx, q)
+		if err != nil || len(wp) == 0 {
+			return nil, errGeocodeWaypoint
+		}
+		waypointPlaces = append(waypointPlaces, wp[0])
+	}
+
+	routeProfile := strings.ToLower(strings.TrimSpace(in.RouteProfile))
+	if routeProfile == "" {
+		routeProfile = "fastest"
+	}
 	route, err := mapProvider.GetRoute(ctx, maps.RouteRequest{
 		Origin:      originPlaces[0],
 		Destination: destPlaces[0],
-		Profile:     "fastest",
+		Waypoints:   waypointPlaces,
+		Profile:     routeProfile,
 	})
 	if err != nil {
 		return nil, err
@@ -121,6 +152,7 @@ func ComputeTrip(ctx context.Context, mapProvider maps.MapProvider, v *vehicles.
 		Assessment:               assessment,
 		MapProvider:              route.Provider,
 		RoutePolyline:            route.Polyline,
+		WaypointCount:            len(waypointPlaces),
 		FuelPricePerLiter:        price,
 	}, nil
 }
@@ -128,6 +160,8 @@ func ComputeTrip(ctx context.Context, mapProvider maps.MapProvider, v *vehicles.
 var (
 	errGeocodeOrigin      = errTrip("could not geocode origin")
 	errGeocodeDestination = errTrip("could not geocode destination")
+	errGeocodeWaypoint    = errTrip("could not geocode a stop on your route")
+	errVehicleRequired    = errTrip("vehicle not found")
 )
 
 type tripError string

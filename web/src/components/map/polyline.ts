@@ -27,3 +27,30 @@ export function decodePolyline(encoded: string, precision = 6): LatLng[] {
   }
   return points
 }
+
+/** Encodes coordinates for Mapbox / Google polyline6. */
+export function encodePolyline(points: LatLng[], precision = 6): string {
+  const factor = 10 ** precision
+  let lastLat = 0
+  let lastLng = 0
+  let out = ''
+
+  const append = (num: number) => {
+    let v = num < 0 ? ~(num << 1) : num << 1
+    while (v >= 0x20) {
+      out += String.fromCharCode((0x20 | (v & 0x1f)) + 63)
+      v >>= 5
+    }
+    out += String.fromCharCode(v + 63)
+  }
+
+  for (const p of points) {
+    const lat = Math.round(p.lat * factor)
+    const lng = Math.round(p.lng * factor)
+    append(lat - lastLat)
+    append(lng - lastLng)
+    lastLat = lat
+    lastLng = lng
+  }
+  return out
+}

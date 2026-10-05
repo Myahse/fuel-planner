@@ -26,10 +26,15 @@ func (m *MockProvider) ReverseGeocode(ctx context.Context, lat, lng float64) (*P
 }
 
 func (m *MockProvider) GetRoute(ctx context.Context, req RouteRequest) (*Route, error) {
-	// Demo: Abidjan ↔ Yamoussoukro one-way ≈ 245 km (round trip 490 km per product spec).
-	oneWay := 245.0
-	if normalize(req.Origin.Label) == normalize(req.Destination.Label) {
-		oneWay = 0
+	stops := append([]Place{req.Origin}, req.Waypoints...)
+	stops = append(stops, req.Destination)
+	oneWay := 0.0
+	for i := 1; i < len(stops); i++ {
+		oneWay += haversineKm(LatLng{Lat: stops[i-1].Lat, Lng: stops[i-1].Lng}, LatLng{Lat: stops[i].Lat, Lng: stops[i].Lng})
+	}
+	if oneWay <= 0 && normalize(req.Origin.Label) != normalize(req.Destination.Label) {
+		// Fallback when coords collapse to the same demo point.
+		oneWay = 245.0
 	}
 	return &Route{
 		DistanceKm:         oneWay,
@@ -42,16 +47,21 @@ func (m *MockProvider) GetRoute(ctx context.Context, req RouteRequest) (*Route, 
 }
 
 func (m *MockProvider) GetNearbyStations(ctx context.Context, lat, lng float64, radiusKm float64) ([]Station, error) {
-	return []Station{
-		{
-			ID: "demo-total-tiebissou", Name: "Total Energies — Tiébissou", Brand: "Total",
-			Lat: 7.16, Lng: -5.23, DistanceFromKm: 147, PricePerLiter: 875, Currency: "FCFA", FuelType: "petrol",
-		},
-	}, nil
+	return demoStations(), nil
 }
 
 func (m *MockProvider) GetStationsAlongRoute(ctx context.Context, route Route, maxDetourKm float64) ([]Station, error) {
-	return m.GetNearbyStations(ctx, 0, 0, 50)
+	// No fake POIs through the API — use MAP_PROVIDER=mapbox for real stations.
+	return nil, nil
+}
+
+func demoStations() []Station {
+	return []Station{
+		{ID: "1", Name: "Total Energies", Brand: "Total", Town: "N'Douci", Lat: 5.872, Lng: -4.765, DistanceFromKm: 95, PricePerLiter: 875, Currency: "FCFA", FuelType: "petrol"},
+		{ID: "2", Name: "Oryx", Brand: "Oryx", Town: "Singrobo", Lat: 6.12, Lng: -4.93, DistanceFromKm: 150, PricePerLiter: 880, Currency: "FCFA", FuelType: "petrol"},
+		{ID: "3", Name: "Petro Ivoire", Brand: "Petro Ivoire", Town: "Toumodi", Lat: 6.557, Lng: -5.019, DistanceFromKm: 190, PricePerLiter: 860, Currency: "FCFA", FuelType: "petrol"},
+		{ID: "4", Name: "Vivo Energy", Brand: "Shell", Town: "Yamoussoukro", Lat: 6.81, Lng: -5.27, DistanceFromKm: 232, PricePerLiter: 870, Currency: "FCFA", FuelType: "petrol"},
+	}
 }
 
 func normalize(s string) string {

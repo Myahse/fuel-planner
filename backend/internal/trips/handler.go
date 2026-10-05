@@ -3,6 +3,7 @@ package trips
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -27,11 +28,13 @@ func NewHandler(db *pgxpool.Pool, vehicleRepo *vehicles.Repository, mapProvider 
 }
 
 type tripRequest struct {
-	VehicleID          string  `json:"vehicle_id"`
-	Origin             string  `json:"origin"`
-	Destination        string  `json:"destination"`
-	TripType           string  `json:"trip_type"`
+	VehicleID          string   `json:"vehicle_id"`
+	Origin             string   `json:"origin"`
+	Destination        string   `json:"destination"`
+	Waypoints          []string `json:"waypoints"`
+	TripType           string   `json:"trip_type"`
 	ConsumptionProfile string  `json:"consumption_profile"`
+	RouteProfile       string  `json:"route_profile"`
 	FuelPricePerLiter  float64 `json:"fuel_price_per_liter"`
 }
 
@@ -50,6 +53,7 @@ type calculateResponse struct {
 	OriginCoords      [2]float64 `json:"origin_coords"`
 	DestinationCoords [2]float64 `json:"destination_coords"`
 	RoutePolyline     string     `json:"route_polyline,omitempty"` // Google polyline, precision 6
+	WaypointCount     int        `json:"waypoint_count"`
 	Disclaimer        string     `json:"disclaimer"`
 }
 
@@ -181,12 +185,18 @@ func (h *Handler) computeFromRequestWithVehicle(r *http.Request) (*TripComputati
 		profile = "mixed"
 	}
 
+	routeProfile := strings.ToLower(strings.TrimSpace(req.RouteProfile))
+	if routeProfile == "" {
+		routeProfile = "fastest"
+	}
 	comp, err := ComputeTrip(r.Context(), h.maps, v, TripInput{
 		VehicleID:          req.VehicleID,
 		Origin:             req.Origin,
 		Destination:        req.Destination,
+		Waypoints:          req.Waypoints,
 		TripType:           req.TripType,
 		ConsumptionProfile: profile,
+		RouteProfile:       routeProfile,
 		FuelPricePerLiter:  req.FuelPricePerLiter,
 	})
 	if err != nil {
@@ -210,6 +220,7 @@ func toCalculateResponse(comp *TripComputation) calculateResponse {
 		OriginCoords:             [2]float64{comp.OriginLat, comp.OriginLng},
 		DestinationCoords:        [2]float64{comp.DestLat, comp.DestLng},
 		RoutePolyline:            comp.RoutePolyline,
+		WaypointCount:            comp.WaypointCount,
 		Disclaimer:               "Fuel and range figures are estimates based on your gauge and consumption profile.",
 	}
 }
@@ -221,7 +232,7 @@ func writeTripError(w http.ResponseWriter, err error) {
 	case isNotFound(err):
 		httputil.Error(w, http.StatusNotFound, err.Error())
 	default:
-		if err == errGeocodeOrigin || err == errGeocodeDestination {
+		if err == errGeocodeOrigin || err == errGeocodeDestination || err == errGeocodeWaypoint {
 			httputil.Error(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -254,12 +265,15 @@ func isNotFound(err error) bool {
 func (h *Handler) resolveVehicle(ctx context.Context, userID, vehicleID string) (*vehicles.Vehicle, error) {
 	if vehicleID == "" {
 		list, err := h.vehicles.ListByUser(ctx, userID)
-		if err != nil || len(list) == 0 {
+		if err != nil {
 			return nil, err
 		}
-		for _, v := range list {
-			if v.IsDefault {
-				return &v, nil
+		if len(list) == 0 {
+			return nil, fmt.Errorf("not found")
+		}
+		for i := range list {
+			if list[i].IsDefault {
+				return &list[i], nil
 			}
 		}
 		return &list[0], nil

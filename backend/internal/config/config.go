@@ -3,9 +3,11 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/fuel-planner/backend/internal/maps"
 	"github.com/joho/godotenv"
 )
 
@@ -19,6 +21,7 @@ type Config struct {
 	MapProvider        string
 	MapAPIKey          string
 	MapCountry         string
+	StationSearch      maps.StationSearchSettings
 }
 
 func Load() (Config, error) {
@@ -49,6 +52,13 @@ func Load() (Config, error) {
 		MapProvider:        getEnv("MAP_PROVIDER", "mock"),
 		MapAPIKey:          getEnv("MAP_API_KEY", ""),
 		MapCountry:         getEnv("MAP_COUNTRY", "ci"),
+		StationSearch: maps.StationSearchSettings{
+			DefaultMaxDetourKm: getEnvFloat("MAP_STATIONS_MAX_DETOUR_KM", 12),
+			AlongRouteLimit:    getEnvInt("MAP_STATIONS_ALONG_LIMIT", 25),
+			NearbyRadiusKm:     getEnvFloat("MAP_STATIONS_NEARBY_RADIUS_KM", 30),
+			NearbyLimit:        getEnvInt("MAP_STATIONS_NEARBY_LIMIT", 40),
+			SampleSearchLimit:  getEnvInt("MAP_STATIONS_SAMPLE_LIMIT", 25),
+		}.WithDefaults(),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -66,4 +76,28 @@ func getEnv(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func getEnvFloat(key string, fallback float64) float64 {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	f, err := strconv.ParseFloat(strings.TrimSpace(v), 64)
+	if err != nil || f <= 0 {
+		return fallback
+	}
+	return f
+}
+
+func getEnvInt(key string, fallback int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(strings.TrimSpace(v))
+	if err != nil || n <= 0 {
+		return fallback
+	}
+	return n
 }

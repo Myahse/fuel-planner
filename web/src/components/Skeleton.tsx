@@ -12,6 +12,6 @@ export function CardSkeleton() {
   )
 }
 
-export function MapSkeleton() {
-  return <Skeleton className="h-full min-h-[220px] w-full rounded-none" />
+export function MapSkeleton({ className = '' }: { className?: string }) {
+  return <Skeleton className={`h-full min-h-[220px] w-full rounded-none ${className}`} />
 }

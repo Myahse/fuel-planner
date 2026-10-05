@@ -48,10 +48,13 @@ func main() {
 		if cfg.MapAPIKey == "" {
 			log.Fatalf("MAP_PROVIDER=mapbox requires MAP_API_KEY (a Mapbox access token)")
 		}
-		mapProvider = maps.NewMapboxProvider(cfg.MapAPIKey, cfg.MapCountry)
+		mb := maps.NewMapboxProvider(cfg.MapAPIKey, cfg.MapCountry)
+		mb.SetStationSearchSettings(cfg.StationSearch)
+		mapProvider = mb
 	}
 	log.Printf("map provider: %s", cfg.MapProvider)
 	tripHandler := trips.NewHandler(pool, vehicleRepo, mapProvider)
+	mapHandler := maps.NewHandler(mapProvider, cfg.StationSearch)
 
 	r := chi.NewRouter()
 	r.Use(chimw.RequestID)
@@ -99,6 +102,11 @@ func main() {
 				tr.Post("/{id}/start", tripHandler.Start)
 				tr.Post("/{id}/end", tripHandler.End)
 			})
+
+			pr.Route("/maps", func(mr chi.Router) {
+				mr.Post("/stations/along-route", mapHandler.StationsAlongRoute)
+				mr.Get("/stations/nearby", mapHandler.StationsNearby)
+			})
 		})
 	})
 
@@ -106,7 +114,7 @@ func main() {
 		Addr:         ":" + cfg.Port,
 		Handler:      r,
 		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 

@@ -45,14 +45,14 @@ npm run dev
 
 ### Maps (Mapbox)
 
-One Mapbox **public** token (`pk.…`) powers both sides. Without it the app still runs on demo routes and free CARTO tiles.
+Use **two** Mapbox tokens (same account is fine):
 
-| Where | Variable | What it does |
-|------|----------|--------------|
-| `backend/.env` | `MAP_PROVIDER=mapbox`, `MAP_API_KEY=pk.…`, `MAP_COUNTRY=ci` | Real geocoding + driving distance/time (Directions API); trip results include the road geometry |
-| `web/.env` | `VITE_MAPBOX_TOKEN=pk.…` | Dark vector maps (navigation-night style while driving) and place suggestions as you type |
+| Where | Token | Variable | What it does |
+|------|--------|----------|--------------|
+| `backend/.env` | **Secret** `sk.…` | `MAP_PROVIDER=mapbox`, `MAP_API_KEY=sk.…`, `MAP_COUNTRY=ci` | Geocoding, Directions, Search Box fuel POIs (never expose this in the browser) |
+| `web/.env` | **Public** `pk.…` | `VITE_MAPBOX_TOKEN=pk.…` | Map tiles and place suggestions in the UI |
 
-In the Mapbox dashboard, restrict the token to your web domains (URL restrictions). Fuel stations and prices are still sample data: Mapbox has no fuel-price source.
+Without Mapbox config the app still runs on demo routes and free CARTO tiles. Restrict the **pk.** token to your dev URLs in the Mapbox dashboard. Mapbox does not provide fuel prices.
 
 ### 3D vehicle models (web)
 

@@ -1,5 +1,12 @@
 import { apiFetch, setTokens, clearTokens } from './client'
-import type { FuelCurrent, FuelTransaction, Trip, TripCalculateResult, Vehicle } from './types'
+import type {
+  FuelCurrent,
+  FuelStationsResponse,
+  FuelTransaction,
+  Trip,
+  TripCalculateResult,
+  Vehicle,
+} from './types'
 
 export async function register(email: string, password: string, displayName: string) {
   const data = await apiFetch<{
@@ -87,6 +94,26 @@ export async function listFuelTransactions(vehicleId?: string) {
   const q = vehicleId ? `?vehicle_id=${vehicleId}` : ''
   const data = await apiFetch<{ transactions: FuelTransaction[] }>(`/fuel/transactions${q}`)
   return data.transactions
+}
+
+export async function getStationsAlongRoute(body: {
+  route_polyline: string
+  distance_km: number
+  max_detour_km?: number
+}) {
+  return apiFetch<FuelStationsResponse>('/maps/stations/along-route', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function getStationsNearby(lat: number, lng: number, radiusKm = 25) {
+  const q = new URLSearchParams({
+    lat: String(lat),
+    lng: String(lng),
+    radius_km: String(radiusKm),
+  })
+  return apiFetch<FuelStationsResponse>(`/maps/stations/nearby?${q}`)
 }
 
 export async function calculateTrip(body: Record<string, unknown>) {

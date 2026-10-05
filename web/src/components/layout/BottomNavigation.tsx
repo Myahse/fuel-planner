@@ -18,7 +18,7 @@ export function BottomNavigation() {
             {({ isActive }) => (
               <span
                 className={`flex h-11 items-center gap-2 rounded-full px-4 transition-colors ${
-                  isActive ? 'bg-fg text-signal-ink' : 'text-fg-3 hover:text-fg'
+                  isActive ? 'bg-fg text-bg' : 'text-fg-3 hover:text-fg'
                 }`}
               >
                 <item.icon className="h-[22px] w-[22px]" strokeWidth={2.2} />

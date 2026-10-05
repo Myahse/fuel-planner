@@ -37,8 +37,11 @@ type Station struct {
 	ID             string
 	Name           string
 	Brand          string
+	Town           string
 	Lat            float64
 	Lng            float64
+	RouteLat       float64
+	RouteLng       float64
 	DistanceFromKm float64
 	PricePerLiter  float64
 	Currency       string

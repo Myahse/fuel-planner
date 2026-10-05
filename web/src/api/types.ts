@@ -38,6 +38,27 @@ export type TripAssessment = {
   recommended_refuel?: number
 }
 
+export type FuelStationAlongRoute = {
+  id: string
+  name: string
+  brand: string
+  town: string
+  lat: number
+  lng: number
+  route_lat: number
+  route_lng: number
+  distance_km_from_start: number
+  price_per_liter: number
+  currency: string
+  fuel_type: string
+}
+
+export type FuelStationsResponse = {
+  stations: FuelStationAlongRoute[]
+  map_provider: string
+  disclaimer: string
+}
+
 export type TripCalculateResult = {
   origin: string
   destination: string
@@ -54,6 +75,8 @@ export type TripCalculateResult = {
   destination_coords?: [number, number]
   /** Road geometry, Google polyline precision 6 — present when the backend routes with Mapbox */
   route_polyline?: string
+  /** Intermediate stops included in the routed distance (multi-stop). */
+  waypoint_count?: number
   disclaimer: string
 }
 

@@ -55,7 +55,7 @@ func TestMapboxGeocodeNoResults(t *testing.T) {
 
 func TestMapboxRoute(t *testing.T) {
 	p := newTestMapbox(t, func(w http.ResponseWriter, r *http.Request) {
-		if !strings.HasPrefix(r.URL.Path, "/directions/v5/mapbox/driving/-4.008300,5.360000;-5.289300,6.827600") {
+		if !strings.HasPrefix(r.URL.Path, "/directions/v5/mapbox/driving-traffic/-4.008300,5.360000;-5.289300,6.827600") {
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		_, _ = w.Write([]byte(`{"code":"Ok","routes":[{"distance":238400,"duration":10260,"geometry":"abc"}]}`))

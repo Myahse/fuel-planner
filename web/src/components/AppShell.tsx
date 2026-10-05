@@ -3,6 +3,7 @@ import { Sidebar } from './layout/Sidebar'
 import { BottomNavigation } from './layout/BottomNavigation'
 import { ContextMapPanel } from './layout/ContextMapPanel'
 import { PageContainer } from './layout/PageContainer'
+import { UserLocationSync } from './UserLocationSync'
 
 const fullBleedRoutes = ['/app/navigation', '/app/active-trip']
 
@@ -12,6 +13,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen lg:flex">
+      <UserLocationSync />
       <Sidebar />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col lg:flex-row">
         <main

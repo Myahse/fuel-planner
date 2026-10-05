@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { login, register } from '../api/endpoints'
 import { ApiError } from '../api/client'
 import { PrimaryButton } from '../components/buttons/PrimaryButton'
+import { PasswordField } from '../components/PasswordField'
 import { BrandMark } from '../components/layout/BrandMark'
 import { useAppStore } from '../store/appStore'
 
@@ -69,12 +70,10 @@ export function AuthPage() {
           </label>
           <label className="block">
             <span className="field-label">Password</span>
-            <input
-              type="password"
+            <PasswordField
               required
               minLength={8}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              className="field"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />

@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export type StoredUserLocation = { lat: number; lng: number; label: string }
+
 type AppState = {
   selectedVehicleId: string | null
   fuelPricePerLiter: number
@@ -13,6 +15,7 @@ type AppState = {
   offlineMapsEnabled: boolean
   theme: 'system' | 'light' | 'dark'
   language: string
+  userLocation: StoredUserLocation | null
   setSelectedVehicleId: (id: string | null) => void
   setFuelPricePerLiter: (price: number) => void
   setDisplayName: (name: string) => void
@@ -20,6 +23,7 @@ type AppState = {
   setNotificationsEnabled: (v: boolean) => void
   setOfflineMapsEnabled: (v: boolean) => void
   setTheme: (t: 'system' | 'light' | 'dark') => void
+  setUserLocation: (loc: StoredUserLocation | null) => void
 }
 
 export const useAppStore = create<AppState>()(
@@ -36,6 +40,7 @@ export const useAppStore = create<AppState>()(
       offlineMapsEnabled: false,
       theme: 'system',
       language: 'English',
+      userLocation: null,
       setSelectedVehicleId: (id) => set({ selectedVehicleId: id }),
       setFuelPricePerLiter: (price) => set({ fuelPricePerLiter: price }),
       setDisplayName: (name) => set({ displayName: name }),
@@ -43,6 +48,7 @@ export const useAppStore = create<AppState>()(
       setNotificationsEnabled: (v) => set({ notificationsEnabled: v }),
       setOfflineMapsEnabled: (v) => set({ offlineMapsEnabled: v }),
       setTheme: (t) => set({ theme: t }),
+      setUserLocation: (loc) => set({ userLocation: loc }),
     }),
     { name: 'fuelgo-app' },
   ),

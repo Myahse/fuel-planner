@@ -20,7 +20,7 @@ export function FuelSegments({ percent, bars, className = '' }: Props) {
         {Array.from({ length: bars }).map((_, i) => (
           <motion.span
             key={i}
-            className={`h-2.5 flex-1 rounded-full ${i < filled ? (low ? 'bg-danger shadow-[0_0_10px_var(--color-danger)]' : 'bg-gradient-to-r from-fuel-1 to-fuel-2 shadow-[0_0_10px_rgb(255_162_31/0.6)]') : 'bg-fg/12'}`}
+            className={`h-2.5 flex-1 rounded-full ${i < filled ? (low ? 'bg-danger' : 'bg-signal') : 'bg-fg/12'}`}
             initial={{ opacity: 0, scaleY: 0.3 }}
             animate={{ opacity: 1, scaleY: 1 }}
             transition={{ delay: i * 0.035, duration: 0.25 }}

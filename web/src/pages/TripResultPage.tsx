@@ -5,7 +5,6 @@ import { useTripStore, type TripPlanDraft } from '../store/tripStore'
 import { useActiveVehicle } from '../hooks/useActiveVehicle'
 import { PageHeader } from '../components/layout/PageHeader'
 import { MapView } from '../components/map/MapView'
-import { MOCK_STATIONS } from '../data/mockStations'
 import { TripResultCard } from '../components/TripResultCard'
 import { TripVerdict } from '../components/StatusCard'
 import { FuelRouteBar } from '../components/FuelRouteBar'
@@ -15,7 +14,12 @@ import { PrimaryButton } from '../components/buttons/PrimaryButton'
 import { SecondaryButton } from '../components/buttons/SecondaryButton'
 import { RESERVE_LITERS, assessTripFuel, vehicleFuelProfile, type VehicleFuelProfile } from '../lib/tripAssessment'
 import { shortPlace } from '../lib/format'
+import { useRouteStations } from '../hooks/useRouteStations'
+import { stationMapPosition } from '../lib/fuelStation'
 import { useTripRoute } from '../hooks/useTripRoute'
+import { useUserMapCenter } from '../hooks/useUserMapCenter'
+import { draftMatchesStoredPlan } from '../lib/tripRoutePlan'
+import { waypointsForApi } from '../lib/tripWaypoints'
 
 function loadSession<T>(key: string): T | null {
   const raw = sessionStorage.getItem(key)
@@ -33,7 +37,19 @@ export function TripResultPage() {
   const { vehicle, vehicles, fuelPricePerLiter, setSelectedVehicleId } = useActiveVehicle()
   const result = lastResult ?? loadSession<TripCalculateResult>('lastTripResult')
   const trip = useTripRoute()
-  const calculatedFor = loadSession<TripPlanDraft>('lastTripPlan')?.vehicle_id
+  const userCenter = useUserMapCenter()
+  const routeStations = useRouteStations(result?.distance_km)
+  const storedPlan = loadSession<TripPlanDraft>('lastTripPlan')
+  const calculatedFor = storedPlan?.vehicle_id
+  const draft = useTripStore((s) => s.draft)
+  const expectedStops = waypointsForApi(storedPlan?.waypoints ?? draft.waypoints).length
+  const stopsInCalc = result?.waypoint_count ?? 0
+  const stopsMissingFromCalc =
+    Boolean(result) &&
+    (storedPlan?.trip_type === 'multi_stop' || draft.trip_type === 'multi_stop') &&
+    expectedStops > 0 &&
+    stopsInCalc < expectedStops
+  const planOutOfDate = Boolean(result) && !draftMatchesStoredPlan(draft, storedPlan)
 
   // The server result is authoritative for the vehicle it was calculated for; switching
   // vehicles here re-runs the same fuel model client-side against that vehicle's tank.
@@ -78,9 +94,7 @@ export function TripResultPage() {
   const tankL = view.profile.tankLiters
   const reserve = RESERVE_LITERS / tankL
   const arriveStatus = a.status === 'enough' ? 'ok' : a.status === 'low' ? 'low' : 'out'
-  const stops = MOCK_STATIONS.filter((s) => s.distanceKmFromStart > 0 && s.distanceKmFromStart < result.distance_km).sort(
-    (x, y) => x.distanceKmFromStart - y.distanceKmFromStart,
-  )
+  const stops = routeStations
 
   return (
     <div className="space-y-6">
@@ -101,6 +115,17 @@ export function TripResultPage() {
             </button>
           ))}
         </div>
+      )}
+
+      {(stopsMissingFromCalc || planOutOfDate) && (
+        <p className="rounded-sm border border-warn/40 bg-warn/10 px-3 py-2.5 text-sm text-fg" role="status">
+          {stopsMissingFromCalc
+            ? `This estimate may not include all ${expectedStops} stop(s) on your route.`
+            : 'Your plan changed since this calculation.'}{' '}
+          <Link to="/app/plan" className="font-bold text-signal hover:text-signal-hi">
+            Recalculate on Plan trip
+          </Link>
+        </p>
       )}
 
       <div>
@@ -139,7 +164,7 @@ export function TripResultPage() {
         ))}
       </div>
 
-      <FuelRouteBar distanceKm={result.distance_km} profile={view.profile} stations={MOCK_STATIONS} />
+      <FuelRouteBar distanceKm={result.distance_km} profile={view.profile} stations={routeStations} />
 
       <section aria-label="Along the road">
         <p className="unit mb-2">along the road</p>
@@ -151,7 +176,7 @@ export function TripResultPage() {
           ].map((row) => (
             <li key={row.id} className="flex items-center gap-3 py-3">
               <span
-                className={`h-2.5 w-2.5 shrink-0 rounded-full ${'station' in row ? 'bg-signal shadow-[0_0_10px_rgb(255_162_31/0.7)]' : 'border-2 border-fg'}`}
+                className={`h-2.5 w-2.5 shrink-0 rounded-full ${'station' in row ? 'bg-signal' : 'border-2 border-fg'}`}
                 aria-hidden
               />
               <span className="min-w-0 flex-1 truncate text-sm font-bold text-fg">{row.name}</span>
@@ -165,15 +190,24 @@ export function TripResultPage() {
 
       <TripResultCard result={view.display} />
 
-      <div className="h-[30vh] min-h-[200px] overflow-hidden rounded-[26px] border border-fg/10 lg:hidden">
+      <div className="h-[min(36vh,320px)] min-h-[220px] overflow-hidden rounded-md border border-fg/10 lg:hidden">
         <MapView
-          className="h-full"
+          className="h-full w-full min-h-[220px]"
+          allowMapPin
+          center={userCenter}
+          zoom={11}
           markers={[
             { id: 'o', lat: origin.lat, lng: origin.lng, variant: 'origin' },
             { id: 'd', lat: dest.lat, lng: dest.lng, variant: 'destination' },
-            ...stops.map((st) => ({ id: st.id, lat: st.lat, lng: st.lng, variant: 'station' as const })),
+            ...stops.map((st) => ({
+              id: st.id,
+              ...stationMapPosition(st),
+              variant: 'station' as const,
+              label: `${st.name} · ${st.town}`,
+            })),
           ]}
           route={{ points: trip.points }}
+          cameraLock="content"
         />
       </div>
 

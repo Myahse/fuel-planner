@@ -8,6 +8,8 @@ import { AnimatedNumber } from './liquid/AnimatedNumber'
 import { WhereToSearch } from './WhereToSearch'
 import { BrandMark } from './layout/BrandMark'
 import { useTripPreview } from '../hooks/useTripCalculation'
+import { useAppStore } from '../store/appStore'
+import { useTripStore } from '../store/tripStore'
 import { barsFilled } from '../lib/fuelMath'
 import { RESERVE_LITERS } from '../lib/tripAssessment'
 import { shortPlace } from '../lib/format'
@@ -31,6 +33,10 @@ const STATUS: Record<'enough' | 'low' | 'insufficient', FuelStatus> = { enough: 
  */
 export function VehicleHeroCard({ vehicle, vehicles, onSelect, percent, liters, rangeKm, destinations }: Props) {
   const trip = useTripPreview()
+  const draft = useTripStore((s) => s.draft)
+  const hasUserLoc = Boolean(useAppStore((s) => s.userLocation))
+  const hasOrigin =
+    Boolean(draft.origin.trim()) || (draft.origin_lat != null && draft.origin_lng != null) || hasUserLoc
   const tank = vehicle.tank_capacity_liters
   const filled = barsFilled(vehicle.fuel_gauge_bars, percent)
   const a = trip.result?.assessment
@@ -96,17 +102,27 @@ export function VehicleHeroCard({ vehicle, vehicles, onSelect, percent, liters, 
         <span className="unit text-fg">{a?.status === 'insufficient' ? 'empty' : `${a ? barsFilled(bars, level * 100) : filled} / ${bars} bars`}</span>
       </TankCard>
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="group" aria-label="Preview a trip">
-        <button type="button" className="chip" aria-pressed={!trip.destination} onClick={trip.clear}>
-          Now
-        </button>
-        {destinations.map((d) => (
-          <button key={d} type="button" className="chip" aria-pressed={trip.destination === d} onClick={() => trip.preview(d)}>
-            {trip.isPending && trip.destination === d && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {d}
+      {destinations.length > 0 && (
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="group" aria-label="Preview a past trip">
+          <button type="button" className="chip" aria-pressed={!trip.destination} onClick={trip.clear}>
+            Now
           </button>
-        ))}
-      </div>
+          {destinations.map((d) => (
+            <button
+              key={d}
+              type="button"
+              className="chip"
+              aria-pressed={trip.destination === d}
+              disabled={!hasOrigin}
+              title={hasOrigin ? undefined : 'Set a starting point above first'}
+              onClick={() => trip.preview(d)}
+            >
+              {trip.isPending && trip.destination === d && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {d}
+            </button>
+          ))}
+        </div>
+      )}
 
       <p className="flex items-start gap-3 text-[15px] font-semibold leading-snug text-fg" aria-live="polite">
         <span className={`lamp mt-1.5 shrink-0 ${trip.isError ? 'text-danger' : lamp}`} aria-hidden />

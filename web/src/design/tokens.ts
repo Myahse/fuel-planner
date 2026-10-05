@@ -1,5 +1,5 @@
 /** JS mirror of the CSS tokens in index.css — for canvas, SVG and map code that can't read CSS vars. */
-export const colors = {
+export const darkColors = {
   bg: '#100c08',
   panel: '#19130d',
   panel2: '#221a12',
@@ -13,6 +13,42 @@ export const colors = {
   warn: '#ff8a1f',
   danger: '#ff5a4e',
 } as const
+
+export const lightColors = {
+  bg: '#f6f2eb',
+  panel: '#ffffff',
+  panel2: '#faf7f2',
+  line: '#e3dcd0',
+  lineStrong: '#c9bfae',
+  fg: '#1a140e',
+  fg2: '#4a4034',
+  fg3: '#7a6f62',
+  signal: '#e88a00',
+  ok: '#2d9d5a',
+  warn: '#d96a00',
+  danger: '#d93a30',
+} as const
+
+export type ThemeColors = {
+  bg: string
+  panel: string
+  panel2: string
+  line: string
+  lineStrong: string
+  fg: string
+  fg2: string
+  fg3: string
+  signal: string
+  ok: string
+  warn: string
+  danger: string
+}
+
+export const colors: ThemeColors = darkColors
+
+export function themeColors(theme: 'light' | 'dark'): ThemeColors {
+  return theme === 'light' ? lightColors : darkColors
+}
 
 /** Liquid colour ramps (surface, middle, bottom) by trip status. */
 export const fuelPalettes = {

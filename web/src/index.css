@@ -32,10 +32,10 @@
   --color-fuel-2: #ffa21f;
   --color-fuel-3: #c25a00;
 
-  --radius-xs: 8px;
-  --radius-sm: 14px;
-  --radius-md: 20px;
-  --radius-lg: 26px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
 
   --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -144,7 +144,7 @@
     gap: 0.5rem;
     height: 3.25rem;
     padding: 0 1.5rem;
-    border-radius: 999px;
+    border-radius: var(--radius-sm);
     font-weight: 800;
     font-size: 0.9375rem;
     letter-spacing: 0.005em;
@@ -166,18 +166,19 @@
     padding: 0 1.125rem;
     font-size: 0.875rem;
   }
-  /* Primary action is liquid: an amber gradient with a soft glow. */
+  /* Primary action: flat signal amber, light depth only. */
   .btn-primary {
-    background: linear-gradient(180deg, var(--color-fuel-1), var(--color-fuel-2) 55%, #f08a10);
+    background: var(--color-signal);
     color: var(--color-signal-ink);
-    box-shadow:
-      0 10px 28px -12px rgb(255 162 31 / 0.8),
-      inset 0 1px 0 rgb(255 255 255 / 0.35);
+    box-shadow: 0 2px 8px -4px rgb(0 0 0 / 0.45);
+    transition:
+      background 0.2s ease,
+      transform 0.12s ease,
+      box-shadow 0.2s ease;
   }
   .btn-primary:hover:not(:disabled) {
-    box-shadow:
-      0 14px 34px -12px rgb(255 162 31 / 0.95),
-      inset 0 1px 0 rgb(255 255 255 / 0.35);
+    background: var(--color-signal-hi);
+    box-shadow: 0 3px 10px -4px rgb(0 0 0 / 0.5);
   }
   .btn-ghost {
     background: rgb(255 246 230 / 0.06);
@@ -198,7 +199,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 999px;
+    border-radius: var(--radius-sm);
     background: rgb(255 246 230 / 0.07);
     border: 1px solid rgb(255 246 230 / 0.16);
     color: var(--color-fg);
@@ -217,7 +218,7 @@
     gap: 0.4rem;
     height: 2.25rem;
     padding: 0 0.875rem;
-    border-radius: 999px;
+    border-radius: var(--radius-sm);
     font-weight: 700;
     font-size: 0.8125rem;
     white-space: nowrap;
@@ -279,7 +280,7 @@
 
   .seg {
     display: flex;
-    border-radius: 999px;
+    border-radius: var(--radius-sm);
     padding: 4px;
     gap: 4px;
     background: rgb(255 246 230 / 0.06);
@@ -288,7 +289,7 @@
   .seg > button {
     flex: 1;
     height: 2.5rem;
-    border-radius: 999px;
+    border-radius: var(--radius-xs);
     font-weight: 700;
     font-size: 0.875rem;
     color: var(--color-fg-2);
@@ -311,12 +312,10 @@
     height: 0.5rem;
     border-radius: 9999px;
     background: currentColor;
-    box-shadow: 0 0 10px currentColor;
   }
 
-  /* Warm glow pooled under the 3D car. */
   .grid-bg {
-    background: radial-gradient(ellipse 60% 55% at 50% 85%, rgb(255 162 31 / 0.16), transparent 70%);
+    background: radial-gradient(ellipse 60% 55% at 50% 85%, rgb(255 162 31 / 0.06), transparent 70%);
   }
 
   .fuel-slider {
@@ -332,7 +331,8 @@
     height: 26px;
     border-radius: 999px;
     background: var(--color-fg);
-    box-shadow: 0 0 0 6px rgb(255 162 31 / 0.25);
+    border: 2px solid var(--color-line-strong);
+    box-shadow: none;
   }
   .fuel-slider::-moz-range-thumb {
     width: 22px;
@@ -374,6 +374,11 @@
   }
 }
 
+.map-pin-mode .mapboxgl-canvas,
+.map-pin-mode .leaflet-container {
+  cursor: crosshair;
+}
+
 /* ── Maps ─────────────────────────────────────────── */
 
 .leaflet-container {
@@ -385,12 +390,12 @@
   background: var(--color-panel-2) !important;
   color: var(--color-fg) !important;
 }
-.mapboxgl-ctrl-group button .mapboxgl-ctrl-icon {
+html[data-theme='dark'] .mapboxgl-ctrl-group button .mapboxgl-ctrl-icon {
   filter: invert(1);
 }
 .mapboxgl-ctrl-group {
   border: 1px solid rgb(255 246 230 / 0.16) !important;
-  border-radius: 14px !important;
+  border-radius: var(--radius-sm) !important;
   box-shadow: none !important;
   overflow: hidden;
   background: var(--color-panel-2) !important;
@@ -437,7 +442,6 @@
   height: 9px;
   border-radius: 999px;
   background: currentColor;
-  box-shadow: 0 0 12px currentColor;
   flex: none;
 }
 .city-pin[data-tone="ok"] > i { color: var(--color-fuel-1); }
@@ -456,14 +460,215 @@
   flex: none;
   min-width: 4.4rem;
   padding: 0.45rem 0.6rem;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   background: #0a0705;
   border: 1px solid rgb(255 162 31 / 0.25);
-  box-shadow: inset 0 0 18px rgb(255 162 31 / 0.08);
+  box-shadow: none;
   color: var(--color-fuel-1);
   text-align: center;
   font: 800 1.45rem/1 var(--font-display);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 12px rgb(255 162 31 / 0.55);
+}
+
+/* ── Light theme ──────────────────────────────────── */
+
+html[data-theme='light'] {
+  color-scheme: light;
+  --color-bg: #f6f2eb;
+  --color-panel: #ffffff;
+  --color-panel-2: #faf7f2;
+  --color-panel-3: #ebe6dc;
+  --color-line: #e3dcd0;
+  --color-line-strong: #c9bfae;
+  --color-fg: #1a140e;
+  --color-fg-2: #4a4034;
+  --color-fg-3: #7a6f62;
+  --color-signal: #e88a00;
+  --color-signal-hi: #f5a623;
+  --color-signal-ink: #2a1600;
+  --color-ok: #2d9d5a;
+  --color-warn: #d96a00;
+  --color-danger: #d93a30;
+  --color-fuel-1: #e8a030;
+  --color-fuel-2: #e88a00;
+  --color-fuel-3: #a85a00;
+}
+
+html[data-theme='light'] .panel,
+html[data-theme='light'] .glass {
+  background: rgb(26 20 14 / 0.04);
+  border-color: rgb(26 20 14 / 0.1);
+}
+
+html[data-theme='light'] .btn-ghost,
+html[data-theme='light'] .icon-btn {
+  background: rgb(26 20 14 / 0.04);
+  border-color: rgb(26 20 14 / 0.12);
+  color: var(--color-fg);
+}
+
+html[data-theme='light'] .field {
+  background: rgb(26 20 14 / 0.03);
+  border-color: rgb(26 20 14 / 0.12);
+}
+
+html[data-theme='light'] .city-pin {
+  text-shadow: 0 1px 2px rgb(255 255 255 / 0.8);
+}
+
+html[data-theme='light'] .leaflet-control-attribution,
+html[data-theme='light'] .mapboxgl-ctrl-attrib {
+  background: rgb(255 255 255 / 0.85) !important;
+  color: var(--color-fg-3) !important;
+}
+
+html[data-theme='light'] .price-sign {
+  background: #fff;
+  color: var(--color-fuel-3);
+  border-color: rgb(26 20 14 / 0.14);
+}
+
+/* ── Trip route pins (start / stops / end) ────────── */
+
+.map-route-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 2px solid var(--color-bg);
+  box-shadow:
+    0 1px 3px rgb(0 0 0 / 0.35),
+    0 0 0 1px rgb(0 0 0 / 0.12);
+  pointer-events: auto;
+}
+.map-route-pin__glyph {
+  font: 800 0.7rem/1 var(--font-display);
+  letter-spacing: -0.02em;
+}
+.map-route-pin--origin {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
+.map-route-pin--destination {
+  background: var(--color-signal);
+  color: var(--color-signal-ink);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.35rem 0.35rem 0.35rem 0.1rem;
+  transform: rotate(-45deg);
+}
+.map-route-pin--destination .map-route-pin__glyph {
+  transform: rotate(45deg);
+  font-size: 0.75rem;
+}
+.map-route-pin--stop {
+  background: var(--color-panel);
+  color: var(--color-signal-hi);
+  border-color: var(--color-signal);
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 3px var(--color-signal),
+    0 2px 8px rgb(232 138 0 / 0.35);
+}
+.map-route-pin--picking {
+  animation: map-route-pin-pulse 1.1s ease-in-out infinite;
+}
+@keyframes map-route-pin-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 2px var(--color-bg),
+      0 0 0 3px var(--color-signal),
+      0 0 12px rgb(232 138 0 / 0.45);
+  }
+  50% {
+    transform: scale(1.12);
+    box-shadow:
+      0 0 0 2px var(--color-bg),
+      0 0 0 5px var(--color-signal-hi),
+      0 0 22px rgb(232 138 0 / 0.75);
+  }
+}
+
+html[data-theme='light'] .map-route-pin--stop {
+  background: #fff;
+}
+
+/* ── Fuel station pins on the map ─────────────────── */
+
+.map-station-pin {
+  display: block;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin: 0;
+  padding: 0;
+  border: 2px solid var(--color-bg);
+  border-radius: 4px;
+  background: var(--color-ok);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.25);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+.map-station-pin:hover {
+  transform: scale(1.08);
+}
+.map-station-pin[aria-pressed='true'] {
+  background: var(--color-signal-hi);
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px var(--color-signal),
+    0 0 18px rgb(232 138 0 / 0.65);
+  transform: scale(1.2);
+  z-index: 2;
+}
+
+html[data-theme='light'] .chip {
+  background: rgb(26 20 14 / 0.06);
+  border-color: rgb(26 20 14 / 0.14);
+  color: var(--color-fg);
+}
+
+html[data-theme='light'] .chip[aria-pressed='true'],
+html[data-theme='light'] .chip[aria-selected='true'] {
+  background: var(--color-fg);
+  color: var(--color-bg);
+  border-color: var(--color-fg);
+}
+
+html[data-theme='light'] .seg {
+  background: rgb(26 20 14 / 0.05);
+  border-color: rgb(26 20 14 / 0.1);
+}
+
+html[data-theme='light'] .seg > button[aria-pressed='true'],
+html[data-theme='light'] .seg > button[aria-checked='true'] {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
+
+html[data-theme='light'] .row-link:hover {
+  background: rgb(26 20 14 / 0.04);
+}
+
+html[data-theme='light'] .fuel-slider {
+  background: linear-gradient(
+    to right,
+    var(--color-fuel-2) var(--pct, 50%),
+    rgb(26 20 14 / 0.12) var(--pct, 50%)
+  );
+}
+
+html[data-theme='light'] .mapboxgl-ctrl-group {
+  border-color: rgb(26 20 14 / 0.12) !important;
+}
+
+html[data-theme='light'] dialog::backdrop {
+  background: rgb(26 20 14 / 0.35);
 }

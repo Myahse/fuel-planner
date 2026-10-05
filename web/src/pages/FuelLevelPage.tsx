@@ -111,7 +111,7 @@ export function FuelLevelPage({ mode = 'onboarding' }: { mode?: 'onboarding' | '
             aria-label={`${i + 1} of ${bars} bars`}
             aria-pressed={i < filled}
             onClick={() => setPct(percentFromBarIndex(bars, i))}
-            className={`h-10 flex-1 rounded-xl transition ${i < filled ? 'bg-gradient-to-b from-fuel-1 to-fuel-2 shadow-[0_0_14px_rgb(255_162_31/0.5)]' : 'bg-fg/10 hover:bg-fg/20'}`}
+            className={`h-10 flex-1 rounded-xl transition ${i < filled ? 'bg-signal' : 'bg-fg/10 hover:bg-fg/20'}`}
           />
         ))}
       </div>

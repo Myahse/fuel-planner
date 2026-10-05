@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import mapboxgl, { type GeoJSONSource, type LngLatLike } from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import type { MapMarker, MapViewProps } from './types'
-import { MAPBOX_TOKEN, MAP_STYLES } from '../../config/mapbox'
-import { colors } from '../../design/tokens'
+import { routePinHtml } from './routePin'
+import { MAPBOX_TOKEN, mapStyleFor } from '../../config/mapbox'
+import { themeColors, type ThemeColors } from '../../design/tokens'
+import { useResolvedTheme } from '../../hooks/useResolvedTheme'
 
 mapboxgl.accessToken = MAPBOX_TOKEN
 
@@ -11,10 +13,42 @@ const ROUTE = 'fuelgo-route'
 const RANGE = 'fuelgo-range'
 const EMPTY: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] }
 
-const markerColor = (v: MapMarker['variant']) =>
-  v === 'origin' ? colors.fg : v === 'destination' ? colors.signal : v === 'station' ? colors.ok : '#7cc4ff'
+const markerColor = (v: MapMarker['variant'], palette: ThemeColors) =>
+  v === 'origin'
+    ? palette.fg
+    : v === 'destination' || v === 'waypoint'
+      ? palette.signal
+      : v === 'station'
+        ? palette.ok
+        : '#4a90d9'
 
-function markerElement(m: MapMarker, onClick?: (id: string) => void) {
+function markerElement(m: MapMarker, palette: ThemeColors, onClick?: (id: string) => void) {
+  const routeHtml = routePinHtml(m)
+  if (routeHtml) {
+    const wrap = document.createElement('div')
+    wrap.innerHTML = routeHtml
+    const el = wrap.firstElementChild as HTMLElement
+    if (onClick) {
+      el.style.cursor = 'pointer'
+      el.addEventListener('click', (e) => {
+        e.stopPropagation()
+        onClick(m.id)
+      })
+    }
+    return el
+  }
+  if (m.variant === 'station') {
+    const el = document.createElement('button')
+    el.type = 'button'
+    el.className = 'map-station-pin'
+    el.setAttribute('aria-pressed', String(Boolean(m.selected)))
+    el.title = m.label ?? 'Fuel station'
+    el.addEventListener('click', (e) => {
+      e.stopPropagation()
+      onClick?.(m.id)
+    })
+    return el
+  }
   if (m.variant === 'city') {
     const el = document.createElement('button')
     el.type = 'button'
@@ -29,8 +63,8 @@ function markerElement(m: MapMarker, onClick?: (id: string) => void) {
     return el
   }
   const el = document.createElement('div')
-  const c = markerColor(m.variant)
-  el.style.cssText = `width:14px;height:14px;border-radius:999px;background:${c};border:3px solid ${colors.bg};box-shadow:0 0 14px ${c}`
+  const c = markerColor(m.variant, palette)
+  el.style.cssText = `width:14px;height:14px;border-radius:4px;background:${c};border:2px solid ${palette.bg}`
   if (m.label) el.title = m.label
   return el
 }
@@ -47,29 +81,29 @@ function circle(center: { lat: number; lng: number }, radiusMeters: number): Geo
   return { type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [coords] } }
 }
 
-function addLayers(map: mapboxgl.Map) {
+function addLayers(map: mapboxgl.Map, palette: ThemeColors) {
   map.addSource(ROUTE, { type: 'geojson', data: EMPTY })
   map.addSource(RANGE, { type: 'geojson', data: EMPTY })
-  map.addLayer({ id: `${RANGE}-fill`, type: 'fill', source: RANGE, paint: { 'fill-color': colors.signal, 'fill-opacity': 0.1 } })
+  map.addLayer({ id: `${RANGE}-fill`, type: 'fill', source: RANGE, paint: { 'fill-color': palette.signal, 'fill-opacity': 0.1 } })
   map.addLayer({
     id: `${RANGE}-line`,
     type: 'line',
     source: RANGE,
-    paint: { 'line-color': colors.signal, 'line-width': 1, 'line-dasharray': [2, 3], 'line-opacity': 0.8 },
+    paint: { 'line-color': palette.signal, 'line-width': 1, 'line-dasharray': [2, 3], 'line-opacity': 0.8 },
   })
   map.addLayer({
     id: `${ROUTE}-casing`,
     type: 'line',
     source: ROUTE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': colors.bg, 'line-width': 9, 'line-opacity': 0.8 },
+    paint: { 'line-color': palette.bg, 'line-width': 9, 'line-opacity': 0.8 },
   })
   map.addLayer({
     id: ROUTE,
     type: 'line',
     source: ROUTE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': colors.signal, 'line-width': 5 },
+    paint: { 'line-color': palette.signal, 'line-width': 5 },
   })
 }
 
@@ -82,19 +116,26 @@ export default function MapboxMapView({
   className = '',
   interactive = true,
   mode = 'default',
+  cameraLock = 'user',
+  recenterTick = 0,
+  mapClickActive = false,
+  onMapClick,
   onMarkerClick,
+  focusPoint = null,
+  focusZoom = 15,
 }: MapViewProps) {
+  const resolvedTheme = useResolvedTheme()
+  const palette = themeColors(resolvedTheme)
   const container = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const markerRefs = useRef<mapboxgl.Marker[]>([])
   const [ready, setReady] = useState(false)
 
-  // Create the map once; style changes recreate it.
   useEffect(() => {
     if (!container.current) return
     const map = new mapboxgl.Map({
       container: container.current,
-      style: MAP_STYLES[mode],
+      style: mapStyleFor(resolvedTheme, mode),
       center: [center.lng, center.lat],
       zoom,
       pitch: mode === 'navigation' ? 55 : 0,
@@ -104,9 +145,8 @@ export default function MapboxMapView({
     })
     map.addControl(new mapboxgl.AttributionControl({ compact: true }), 'bottom-right')
     if (interactive) map.addControl(new mapboxgl.NavigationControl({ showCompass: mode === 'navigation' }), 'top-left')
-    // 'style.load' fires once the style is parsed; 'load' also waits for every first tile, which can stall on slow networks.
     map.on('style.load', () => {
-      addLayers(map)
+      addLayers(map, palette)
       setReady(true)
     })
     mapRef.current = map
@@ -119,9 +159,8 @@ export default function MapboxMapView({
       mapRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, interactive])
+  }, [mode, interactive, resolvedTheme])
 
-  // Parents pass fresh arrays every render; only redraw and re-frame when the data actually changes.
   const points = route?.points ?? []
   const dataKey = JSON.stringify([
     points.length,
@@ -133,23 +172,27 @@ export default function MapboxMapView({
     center.lng,
     zoom,
   ])
-  const latest = useRef({ points, markers, rangeCircle, center, zoom, onMarkerClick })
-  latest.current = { points, markers, rangeCircle, center, zoom, onMarkerClick }
-  // Pins restyle (tone, selection, label) without re-framing the camera.
-  const markerKey = JSON.stringify(markers.map((m) => [m.id, m.lat, m.lng, m.variant, m.tone, m.selected, m.label]))
+  const latest = useRef({ points, markers, rangeCircle, center, zoom, onMarkerClick, onMapClick, palette, cameraLock })
+  latest.current = { points, markers, rangeCircle, center, zoom, onMarkerClick, onMapClick, palette, cameraLock }
+  const markerKey = JSON.stringify(
+    markers.map((m) => [m.id, m.lat, m.lng, m.variant, m.tone, m.selected, m.label, m.stopIndex]),
+  )
 
   useEffect(() => {
     const map = mapRef.current
     if (!map || !ready) return
     markerRefs.current.forEach((m) => m.remove())
     markerRefs.current = latest.current.markers.map((m) =>
-      new mapboxgl.Marker({ element: markerElement(m, (id) => latest.current.onMarkerClick?.(id)), anchor: m.variant === 'city' ? 'left' : 'center', offset: m.variant === 'city' ? [-8, 0] : [0, 0] })
+      new mapboxgl.Marker({
+        element: markerElement(m, latest.current.palette, (id) => latest.current.onMarkerClick?.(id)),
+        anchor: m.variant === 'city' ? 'left' : 'center',
+        offset: m.variant === 'city' ? [-8, 0] : [0, 0],
+      })
         .setLngLat([m.lng, m.lat])
         .addTo(map),
     )
-  }, [ready, markerKey])
+  }, [ready, markerKey, resolvedTheme])
 
-  // Data: route, range ring, markers, framing.
   useEffect(() => {
     const map = mapRef.current
     if (!map || !ready) return
@@ -162,6 +205,11 @@ export default function MapboxMapView({
     )
     ;(map.getSource(RANGE) as GeoJSONSource).setData(rangeCircle ? circle(rangeCircle.center, rangeCircle.radiusMeters) : EMPTY)
 
+    const followUser = cameraLock === 'user' && mode !== 'navigation'
+    if (followUser) {
+      map.easeTo({ center: [center.lng, center.lat], zoom, duration: 400, pitch: 0 })
+      return
+    }
     const framePoints = points.length > 1 ? points : rangeCircle ? [] : markers
     if (framePoints.length > 1) {
       const bounds = new mapboxgl.LngLatBounds()
@@ -171,11 +219,44 @@ export default function MapboxMapView({
       const ring = circle(rangeCircle.center, rangeCircle.radiusMeters).geometry.coordinates[0]
       const bounds = new mapboxgl.LngLatBounds()
       ring.forEach((c) => bounds.extend(c as LngLatLike))
-      map.fitBounds(bounds, { padding: 24, duration: 600 })
+      map.fitBounds(bounds, { padding: 32, duration: 600, maxZoom: 10 })
     } else {
       map.easeTo({ center: [center.lng, center.lat], zoom, duration: 600 })
     }
-  }, [ready, dataKey, mode])
+  }, [ready, dataKey, mode, cameraLock])
 
-  return <div ref={container} className={`relative overflow-hidden bg-bg ${className}`} />
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready || !recenterTick) return
+    const { center, zoom } = latest.current
+    map.flyTo({ center: [center.lng, center.lat], zoom, duration: 900, pitch: 0, essential: true })
+  }, [recenterTick, ready])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready || !focusPoint) return
+    map.easeTo({
+      center: [focusPoint.lng, focusPoint.lat],
+      zoom: focusZoom,
+      duration: 500,
+      pitch: mode === 'navigation' ? 55 : 0,
+    })
+  }, [focusPoint?.lat, focusPoint?.lng, focusZoom, ready, mode])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready) return
+    const onClick = (e: mapboxgl.MapMouseEvent) => {
+      if (!latest.current.onMapClick) return
+      const target = e.originalEvent.target as HTMLElement
+      if (target.closest('.city-pin, .map-station-pin, .map-route-pin, .mapboxgl-ctrl, .mapboxgl-marker')) return
+      latest.current.onMapClick(e.lngLat.lat, e.lngLat.lng)
+    }
+    map.on('click', onClick)
+    return () => {
+      map.off('click', onClick)
+    }
+  }, [ready, mapClickActive, onMapClick])
+
+  return <div ref={container} className={`relative h-full w-full min-h-[inherit] overflow-hidden bg-bg ${className}`} />
 }

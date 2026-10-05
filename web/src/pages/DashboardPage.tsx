@@ -2,16 +2,16 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowUpRight, Droplets, Fuel, Route } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { getFuelCurrent, listFuelTransactions, listTrips } from '../api/endpoints'
+import { getFuelCurrent, getStationsNearby, listFuelTransactions, listTrips } from '../api/endpoints'
+import { useAppStore } from '../store/appStore'
+import { formatStationPrice } from '../lib/fuelStation'
 import { useActiveVehicle } from '../hooks/useActiveVehicle'
 import { CarViewer } from '../components/car3d/CarViewer'
 import { VehicleHeroCard } from '../components/VehicleHeroCard'
 import { EmptyState } from '../components/EmptyState'
 import { CardSkeleton } from '../components/Skeleton'
-import { MOCK_STATIONS } from '../data/mockStations'
+import { STATIONS_NEARBY_RADIUS_KM } from '../config/stations'
 import { shortPlace } from '../lib/format'
-
-const DEFAULT_DESTINATIONS = ['Yamoussoukro', 'Bouaké', 'San-Pédro', 'Korhogo']
 
 function shortDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
@@ -20,6 +20,7 @@ function shortDate(iso: string) {
 export function DashboardPage() {
   const navigate = useNavigate()
   const { vehicle, vehicles, vehiclesQuery, fuelPricePerLiter, setSelectedVehicleId } = useActiveVehicle()
+  const userLocation = useAppStore((s) => s.userLocation)
 
   const fuelQuery = useQuery({
     queryKey: ['fuel-current', vehicle?.id],
@@ -32,6 +33,12 @@ export function DashboardPage() {
     enabled: Boolean(vehicle?.id),
   })
   const tripsQuery = useQuery({ queryKey: ['trips'], queryFn: listTrips, enabled: Boolean(vehicle) })
+  const nearbyStationsQuery = useQuery({
+    queryKey: ['stations-nearby', userLocation?.lat, userLocation?.lng],
+    queryFn: () => getStationsNearby(userLocation!.lat, userLocation!.lng, STATIONS_NEARBY_RADIUS_KM),
+    enabled: Boolean(userLocation),
+    staleTime: 15 * 60 * 1000,
+  })
 
   const pct = Math.round(fuelQuery.data?.fuel_percentage ?? vehicle?.fuel_percentage ?? 60)
   const liters = fuelQuery.data?.estimated_fuel_liters ?? vehicle?.estimated_fuel_liters ?? 30
@@ -40,10 +47,8 @@ export function DashboardPage() {
 
   const lastFill = txQuery.data?.[0]
   const lastTrip = tripsQuery.data?.find((t) => !vehicle || t.vehicle_id === vehicle.id) ?? tripsQuery.data?.[0]
-  const cheapest = [...MOCK_STATIONS].sort((a, b) => a.pricePerLiter - b.pricePerLiter)[0]
-  // Recent destinations first, topped up with common long trips from Abidjan.
-  const recent = [...new Set((tripsQuery.data ?? []).map((t) => shortPlace(t.destination)))]
-  const destinations = [...new Set([...recent, ...DEFAULT_DESTINATIONS])].slice(0, 4)
+  const nearbyStation = nearbyStationsQuery.data?.stations[0]
+  const destinations = [...new Set((tripsQuery.data ?? []).map((t) => shortPlace(t.destination)))].slice(0, 6)
 
   if (vehiclesQuery.isLoading) return <CardSkeleton />
 
@@ -79,7 +84,14 @@ export function DashboardPage() {
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Tile to="/app/stations" icon={<Fuel className="h-4 w-4" />} label="Cheapest nearby" value={`${cheapest.pricePerLiter}`} unit="F/L" hint={cheapest.brand} />
+        <Tile
+          to="/app/stations"
+          icon={<Fuel className="h-4 w-4" />}
+          label="Fuel nearby"
+          value={nearbyStation ? formatStationPrice(nearbyStation.price_per_liter, fuelPricePerLiter) : '—'}
+          unit="F/L"
+          hint={nearbyStation?.brand || nearbyStation?.name || 'Plan a trip for route stops'}
+        />
         <Tile
           to="/app/statistics"
           icon={<Droplets className="h-4 w-4" />}
@@ -91,7 +103,7 @@ export function DashboardPage() {
       </div>
 
       <Link to={lastTrip ? `/app/history/${lastTrip.id}` : '/app/plan'} className="glass flex items-center gap-4 px-4 py-3.5">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fg/10 text-fuel-1">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fg/10 text-fuel-3">
           <Route className="h-5 w-5" />
         </span>
         <span className="min-w-0 flex-1">
@@ -104,7 +116,7 @@ export function DashboardPage() {
       </Link>
 
       <Link to={lastFill ? `/app/fuel/transactions/${lastFill.id}` : '/app/fuel/add'} className="glass flex items-center gap-4 px-4 py-3.5">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fg/10 text-fuel-1">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fg/10 text-fuel-3">
           <Droplets className="h-5 w-5" />
         </span>
         <span className="min-w-0 flex-1">
@@ -133,7 +145,7 @@ export function DashboardPage() {
 function Tile({ to, icon, label, value, unit, hint }: { to: string; icon: ReactNode; label: string; value: string; unit: string; hint: string }) {
   return (
     <Link to={to} className="glass block px-4 py-3.5">
-      <span className="flex items-center gap-2 text-fuel-1">
+      <span className="flex items-center gap-2 text-fuel-3">
         {icon}
         <span className="unit">{label}</span>
       </span>

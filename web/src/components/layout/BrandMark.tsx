@@ -14,7 +14,7 @@ export function BrandMark({ size = 'md' }: { size?: 'md' | 'lg' }) {
             <stop offset="1" stopColor={fuelPalettes.ok[1]} />
           </linearGradient>
         </defs>
-        <path d="M8 0C8 0 0 9 0 13.5A8 8 0 0 0 16 13.5C16 9 8 0 8 0Z" fill={`url(#${gradientId})`} style={{ filter: 'drop-shadow(0 0 6px rgb(255 162 31 / 0.6))' }} />
+        <path d="M8 0C8 0 0 9 0 13.5A8 8 0 0 0 16 13.5C16 9 8 0 8 0Z" fill={`url(#${gradientId})`} />
       </svg>
       <span className={`font-[family-name:var(--font-display)] font-extrabold tracking-[0.08em] text-fg ${size === 'lg' ? 'text-2xl' : 'text-[15px]'}`}>
         {PRODUCT.name}

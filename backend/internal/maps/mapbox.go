@@ -12,25 +12,28 @@ import (
 	"time"
 )
 
-// MapboxProvider geocodes with the Mapbox Geocoding API v6 and routes with the
-// Directions API v5. Fuel stations still come from the mock provider: Mapbox has
-// no fuel-price data.
+// MapboxProvider geocodes with the Mapbox Geocoding API v6, routes with Directions v5,
+// and discovers fuel POIs with the Search Box category API (no pump prices).
 type MapboxProvider struct {
-	token   string
-	country string // ISO 3166 alpha-2 bias for geocoding, e.g. "ci"
-	baseURL string
-	client  *http.Client
-	*MockProvider
+	token    string
+	country  string // ISO 3166 alpha-2 bias for geocoding, e.g. "ci"
+	baseURL  string
+	client   *http.Client
+	stations StationSearchSettings
 }
 
 func NewMapboxProvider(token, country string) *MapboxProvider {
 	return &MapboxProvider{
-		token:        token,
-		country:      country,
-		baseURL:      "https://api.mapbox.com",
-		client:       &http.Client{Timeout: 10 * time.Second},
-		MockProvider: NewMockProvider(),
+		token:    token,
+		country:  country,
+		baseURL:  "https://api.mapbox.com",
+		client:   &http.Client{Timeout: 20 * time.Second},
+		stations: StationSearchSettings{}.WithDefaults(),
 	}
+}
+
+func (m *MapboxProvider) SetStationSearchSettings(s StationSearchSettings) {
+	m.stations = s.WithDefaults()
 }
 
 // WithBaseURL points the provider at another host (tests).
@@ -117,6 +120,17 @@ type directionsResponse struct {
 	} `json:"routes"`
 }
 
+func mapboxDrivingProfile(profile string) string {
+	switch strings.ToLower(strings.TrimSpace(profile)) {
+	case "fastest":
+		return "driving-traffic"
+	case "efficient", "cheapest":
+		return "driving"
+	default:
+		return "driving-traffic"
+	}
+}
+
 func (m *MapboxProvider) GetRoute(ctx context.Context, req RouteRequest) (*Route, error) {
 	stops := append([]Place{req.Origin}, req.Waypoints...)
 	stops = append(stops, req.Destination)
@@ -124,13 +138,15 @@ func (m *MapboxProvider) GetRoute(ctx context.Context, req RouteRequest) (*Route
 	for i, p := range stops {
 		coords[i] = fmt.Sprintf("%.6f,%.6f", p.Lng, p.Lat)
 	}
+	driving := mapboxDrivingProfile(req.Profile)
 	q := url.Values{
-		"geometries":   {"polyline6"},
-		"overview":     {"full"},
-		"access_token": {m.token},
+		"geometries":    {"polyline6"},
+		"overview":      {"full"},
+		"alternatives":  {"false"},
+		"access_token":  {m.token},
 	}
 	var res directionsResponse
-	if err := m.get(ctx, "/directions/v5/mapbox/driving/"+strings.Join(coords, ";"), q, &res); err != nil {
+	if err := m.get(ctx, "/directions/v5/mapbox/"+driving+"/"+strings.Join(coords, ";"), q, &res); err != nil {
 		return nil, err
 	}
 	if res.Code != "Ok" || len(res.Routes) == 0 {

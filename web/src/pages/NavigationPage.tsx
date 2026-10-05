@@ -2,15 +2,17 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowUp } from 'lucide-react'
 import { MapView } from '../components/map/MapView'
 import { useTripStore } from '../store/tripStore'
-import { MOCK_STATIONS } from '../data/mockStations'
 import { DriveHud } from './ActiveTripPage'
 import { useTripRoute } from '../hooks/useTripRoute'
+import { useRouteStations } from '../hooks/useRouteStations'
+import { stationMapPosition } from '../lib/fuelStation'
 
 /** Turn-by-turn view. Maneuver text is a placeholder until a routing provider is connected. */
 export function NavigationPage() {
   const navigate = useNavigate()
   const { lastResult } = useTripStore()
   const trip = useTripRoute()
+  const routeStations = useRouteStations()
   const origin = trip.origin
   const dest = trip.destination
   const hours = Math.floor((lastResult?.estimated_duration_seconds ?? 20400) / 3600)
@@ -37,9 +39,14 @@ export function NavigationPage() {
         markers={[
           { id: 'o', lat: origin.lat, lng: origin.lng, variant: 'origin' },
           { id: 'd', lat: dest.lat, lng: dest.lng, variant: 'destination' },
-          ...MOCK_STATIONS.map((s) => ({ id: s.id, lat: s.lat, lng: s.lng, variant: 'station' as const })),
+          ...routeStations.map((s) => ({
+            id: s.id,
+            ...stationMapPosition(s),
+            variant: 'station' as const,
+          })),
         ]}
         route={{ points: trip.points }}
+        cameraLock="content"
       />
 
       <DriveHud

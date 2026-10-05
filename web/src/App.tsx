@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { ThemeSync } from './components/ThemeSync'
 import { hasSession } from './api/client'
 import { AppShell } from './components/AppShell'
 import { AuthPage } from './pages/AuthPage'
@@ -34,7 +35,9 @@ function RequireAuth({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
-    <Routes>
+    <>
+      <ThemeSync />
+      <Routes>
       <Route path="/" element={<OnboardingPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route
@@ -68,5 +71,6 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }
