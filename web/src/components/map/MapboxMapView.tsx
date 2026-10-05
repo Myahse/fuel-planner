@@ -12,12 +12,12 @@ const RANGE = 'fuelgo-range'
 const EMPTY: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] }
 
 const markerColor = (v: MapMarker['variant']) =>
-  v === 'origin' ? colors.mustard : v === 'destination' ? colors.signal : v === 'station' ? colors.teal : '#7cc4ff'
+  v === 'origin' ? colors.fg : v === 'destination' ? colors.signal : v === 'station' ? colors.ok : '#7cc4ff'
 
 function markerElement(m: MapMarker) {
   const el = document.createElement('div')
   const c = markerColor(m.variant)
-  el.style.cssText = `width:16px;height:16px;border-radius:999px;background:${c};border:3px solid ${colors.espresso};box-shadow:0 2px 0 ${colors.espresso}`
+  el.style.cssText = `width:14px;height:14px;border-radius:999px;background:${c};border:3px solid ${colors.bg};box-shadow:0 0 14px ${c}`
   if (m.label) el.title = m.label
   return el
 }
@@ -49,7 +49,7 @@ function addLayers(map: mapboxgl.Map) {
     type: 'line',
     source: ROUTE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': colors.espresso, 'line-width': 9 },
+    paint: { 'line-color': colors.bg, 'line-width': 9, 'line-opacity': 0.8 },
   })
   map.addLayer({
     id: ROUTE,

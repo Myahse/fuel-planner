@@ -22,8 +22,8 @@ export function Sidebar() {
   const displayName = useAppStore((s) => s.displayName)
 
   return (
-    <aside className="hidden overflow-hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[248px] lg:shrink-0 lg:flex-col lg:border-r-[2.5px] lg:border-espresso lg:px-4 lg:py-7">
-      <div className="pl-6">
+    <aside className="hidden overflow-hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[248px] lg:shrink-0 lg:flex-col lg:border-r lg:border-fg/10 lg:px-4 lg:py-7">
+      <div className="px-3">
         <BrandMark />
       </div>
 
@@ -37,16 +37,12 @@ export function Sidebar() {
                   end={item.end}
                   className={({ isActive }) =>
                     `flex items-center gap-3 rounded-full px-4 py-2.5 text-[15px] font-bold transition ${
-                      isActive ? 'bg-espresso text-digit' : 'text-fg-2 hover:bg-panel-2 hover:text-fg'
+                      isActive ? 'bg-fg text-signal-ink' : 'text-fg-2 hover:bg-fg/8 hover:text-fg'
                     }`
                   }
                 >
-                  {({ isActive }) => (
-                    <>
-                      <item.icon className={`h-[18px] w-[18px] ${isActive ? 'text-mustard' : ''}`} strokeWidth={2.2} />
-                      {item.label}
-                    </>
-                  )}
+                  <item.icon className="h-[18px] w-[18px]" strokeWidth={2.2} />
+                  {item.label}
                 </NavLink>
               </li>
             ))}
@@ -54,8 +50,8 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="ticket flex items-center gap-3 px-3 py-2.5">
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-mustard font-[family-name:var(--font-display)] text-espresso">
+      <div className="glass flex items-center gap-3 px-3 py-2.5">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-b from-fuel-1 to-fuel-2 font-[family-name:var(--font-display)] text-signal-ink">
           {displayName.slice(0, 1).toUpperCase()}
         </span>
         <span className="min-w-0 truncate font-bold text-fg">{displayName}</span>

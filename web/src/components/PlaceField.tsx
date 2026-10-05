@@ -64,7 +64,7 @@ export function PlaceField({ value, onChange, onPick, className = '', ...rest }:
         <ul
           id={listId}
           role="listbox"
-          className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-sm border border-line-strong bg-panel shadow-[0_12px_32px_rgb(0_0_0/0.5)]"
+          className="absolute left-0 right-0 top-full z-50 mt-3 overflow-hidden rounded-[18px] border border-fg/15 bg-panel-2/95 shadow-[0_18px_40px_rgb(0_0_0/0.6)] backdrop-blur-xl"
         >
           {suggestions.map((s, i) => (
             <li
@@ -77,7 +77,7 @@ export function PlaceField({ value, onChange, onPick, className = '', ...rest }:
                 pick(s)
               }}
               onMouseEnter={() => setActive(i)}
-              className={`cursor-pointer border-b border-line px-4 py-2.5 last:border-0 ${i === active ? 'bg-panel-3' : ''}`}
+              className={`cursor-pointer border-b border-fg/10 px-4 py-2.5 last:border-0 ${i === active ? 'bg-panel-3' : ''}`}
             >
               <span className="block text-sm font-semibold text-fg">{s.name}</span>
               {s.context && <span className="unit block truncate">{s.context}</span>}

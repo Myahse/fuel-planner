@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Loader2, SlidersHorizontal } from 'lucide-react'
+import { ArrowRight, Loader2, Search, SlidersHorizontal } from 'lucide-react'
 import { useTripStore } from '../store/tripStore'
 import { useTripCalculation } from '../hooks/useTripCalculation'
 import { PlaceField } from './PlaceField'
 import { shortPlace } from '../lib/format'
 
-/** Home-screen shortcut: type a destination and jump straight to the trip result. */
+/** Frosted search floating over the tank: type a destination and jump straight to the trip result. */
 export function WhereToSearch() {
   const origin = useTripStore((s) => s.draft.origin)
   const setDraft = useTripStore((s) => s.setDraft)
@@ -23,29 +23,27 @@ export function WhereToSearch() {
 
   return (
     <div>
-      <form onSubmit={submit} role="search" className="flex items-center gap-2 rounded-full bg-teal py-2 pl-6 pr-2 text-digit shadow-[0_4px_0_#123f3c]">
+      <form onSubmit={submit} role="search" className="glass flex items-center gap-3 !rounded-[22px] py-2 pl-4 pr-2">
+        <Search className="h-5 w-5 shrink-0 text-fg-3" strokeWidth={2.2} />
         <label className="min-w-0 flex-1">
-          <span className="block text-xs font-medium opacity-75">From {shortPlace(origin)}</span>
+          <span className="block text-[11px] font-semibold text-fg-3">From {shortPlace(origin)}</span>
           <PlaceField
-            className="w-full bg-transparent font-[family-name:var(--font-display)] text-lg text-digit outline-none placeholder:text-digit/80 focus-visible:outline-none"
-            placeholder="Where to today?"
+            className="w-full bg-transparent text-[17px] font-bold text-fg outline-none placeholder:text-fg focus-visible:outline-none"
+            placeholder="Where are we going?"
             value={destination}
             onChange={setDestination}
             enterKeyHint="go"
             aria-label="Destination"
           />
         </label>
-        <Link to="/app/plan" className="flex h-11 w-11 items-center justify-center rounded-full text-digit/80 hover:bg-teal-hi" aria-label="More trip options">
-          <SlidersHorizontal className="h-5 w-5" />
+        <Link to="/app/plan" className="flex h-10 w-10 items-center justify-center rounded-full text-fg-3 hover:bg-fg/10 hover:text-fg" aria-label="More trip options">
+          <SlidersHorizontal className="h-[18px] w-[18px]" />
         </Link>
-        <button
-          type="submit"
-          disabled={!vehicle || !destination.trim() || isPending}
-          className="flex h-12 w-12 items-center justify-center rounded-full border-[2.5px] border-espresso bg-mustard text-espresso transition disabled:border-digit/30 disabled:bg-teal-hi disabled:text-digit/60"
-          aria-label="Calculate trip"
-        >
-          {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" strokeWidth={2.8} />}
-        </button>
+        {destination.trim() && (
+          <button type="submit" disabled={!vehicle || isPending} className="btn btn-primary !h-11 !w-11 !p-0" aria-label="Calculate trip">
+            {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" strokeWidth={2.6} />}
+          </button>
+        )}
       </form>
       {isError && (
         <p className="mt-2 px-2 text-sm font-bold text-danger" role="alert">

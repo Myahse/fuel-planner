@@ -1,11 +1,24 @@
+import { useId } from 'react'
 import { PRODUCT } from '../../config/product'
+import { fuelPalettes } from '../../design/tokens'
 
-/** Wordmark: the name in Bungee over red–orange–mustard racing stripes, like a forecourt sign. */
-export function BrandMark({ size = 'md', stripes = true }: { size?: 'md' | 'lg'; stripes?: boolean }) {
+/** Wordmark: the name in wide Unbounded with a glowing fuel drop. */
+export function BrandMark({ size = 'md' }: { size?: 'md' | 'lg' }) {
+  const gradientId = `brand-drop-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`
   return (
-    <span className="relative inline-flex items-center">
-      {stripes && <span className="stripes absolute -left-6 right-[-14px] top-1/2 h-4 -translate-y-1/2" aria-hidden />}
-      <span className={`title relative bg-bg px-1.5 text-fg ${size === 'lg' ? 'text-4xl' : 'text-[1.6rem]'}`}>{PRODUCT.name}</span>
+    <span className="inline-flex items-center gap-2">
+      <svg viewBox="0 0 16 20" className={size === 'lg' ? 'h-6 w-5' : 'h-[18px] w-[14px]'} aria-hidden>
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor={fuelPalettes.ok[0]} />
+            <stop offset="1" stopColor={fuelPalettes.ok[1]} />
+          </linearGradient>
+        </defs>
+        <path d="M8 0C8 0 0 9 0 13.5A8 8 0 0 0 16 13.5C16 9 8 0 8 0Z" fill={`url(#${gradientId})`} style={{ filter: 'drop-shadow(0 0 6px rgb(255 162 31 / 0.6))' }} />
+      </svg>
+      <span className={`font-[family-name:var(--font-display)] font-extrabold tracking-[0.08em] text-fg ${size === 'lg' ? 'text-2xl' : 'text-[15px]'}`}>
+        {PRODUCT.name}
+      </span>
     </span>
   )
 }

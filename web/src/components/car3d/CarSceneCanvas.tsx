@@ -88,7 +88,7 @@ export default function CarSceneCanvas({ config, autoRotate = true, interactive 
     <Canvas
       shadows
       dpr={[1, 2]}
-      frameloop={active ? 'always' : 'never'}
+      frameloop={active ? 'always' : 'demand'}
       className="!h-full !w-full"
       style={{ width: '100%', height: '100%', display: 'block' }}
       camera={{ position: [7, 2.4, 6.4], fov: 28 }}

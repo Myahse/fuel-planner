@@ -1,9 +1,14 @@
 import { Link } from 'react-router-dom'
+import { ArrowRight, ChevronDown, Loader2 } from 'lucide-react'
 import type { Vehicle } from '../api/types'
-import { CarViewer } from './car3d/CarViewer'
-import { FlipDigits } from './retro/FlipDigits'
-import { RetroDial } from './retro/RetroDial'
+import { LiquidTank, type FuelStatus } from './liquid/LiquidTank'
+import { AnimatedNumber } from './liquid/AnimatedNumber'
+import { WhereToSearch } from './WhereToSearch'
+import { BrandMark } from './layout/BrandMark'
+import { useTripPreview } from '../hooks/useTripCalculation'
 import { barsFilled } from '../lib/fuelMath'
+import { RESERVE_LITERS } from '../lib/tripAssessment'
+import { shortPlace } from '../lib/format'
 
 type Props = {
   vehicle: Vehicle
@@ -12,72 +17,100 @@ type Props = {
   percent: number
   liters: number
   rangeKm: number
-  pricePerLiter: number
-  verdict?: string
+  destinations: string[]
 }
 
-/** Home hero: the car on its pump island, then the pump display and the dial. */
-export function VehicleHeroCard({ vehicle, vehicles, onSelect, percent, liters, rangeKm, pricePerLiter, verdict }: Props) {
+const STATUS: Record<'enough' | 'low' | 'insufficient', FuelStatus> = { enough: 'ok', low: 'low', insufficient: 'out' }
+
+/**
+ * Home hero: the screen is the tank. Pick a destination and the liquid drains to what
+ * you will have left when you arrive, using the real route from the backend.
+ */
+export function VehicleHeroCard({ vehicle, vehicles, onSelect, percent, liters, rangeKm, destinations }: Props) {
+  const trip = useTripPreview()
+  const tank = vehicle.tank_capacity_liters
   const filled = barsFilled(vehicle.fuel_gauge_bars, percent)
-  const mood = percent < 20 ? 'Running low — find a pump soon.' : percent < 45 ? 'Fine for town, top up before a long drive.' : 'Plenty for today.'
+  const a = trip.result?.assessment
+
+  const level = a ? Math.max(0, a.remaining_fuel) / tank : liters / tank
+  const status: FuelStatus = a ? STATUS[a.status] : percent < 20 ? 'low' : 'ok'
+  const km = a ? Math.max(0, a.remaining_range_km) : rangeKm
 
   return (
-    <section aria-label="Active vehicle" className="space-y-4">
-      {vehicles.length > 1 && (
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" role="tablist" aria-label="Switch vehicle">
-          {vehicles.map((v) => {
-            const active = v.id === vehicle.id
-            return (
-              <button
-                key={v.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => onSelect(v.id)}
-                className={`shrink-0 rounded-full border-[2.5px] border-espresso px-4 py-1.5 text-sm font-bold transition ${
-                  active ? 'bg-espresso text-digit' : 'bg-panel text-fg hover:bg-panel-2'
-                }`}
-              >
-                {v.make} {v.model}
-              </button>
-            )
-          })}
-        </div>
-      )}
+    <section aria-label="Your tank" className="relative -mx-4 -mt-4 h-[min(82svh,720px)] min-h-[600px] overflow-hidden sm:mx-0 sm:mt-0 sm:rounded-[32px] sm:border sm:border-fg/10">
+      <LiquidTank level={level} status={status} reserve={RESERVE_LITERS / tank} bars={vehicle.fuel_gauge_bars} className="absolute inset-0 bg-bg" />
 
-      <div className="relative">
-        <CarViewer vehicle={vehicle} variant="banner" autoRotate className="rounded-[26px] border-[2.5px] border-espresso bg-panel" />
-        <Link to="/app/vehicles" className="absolute right-3 top-3 rounded-full border-2 border-espresso bg-mustard px-3 py-1 text-xs font-bold text-espresso">
-          Garage →
-        </Link>
-      </div>
-
-      <Link to="/app/fuel/level" aria-label="Adjust fuel level" className="pump block p-4 transition active:translate-y-0.5">
+      <div className="relative flex h-full flex-col px-5 pb-6 pt-4">
         <div className="flex items-center justify-between gap-3">
-          <span className="unit !text-mustard">range · km</span>
-          <FlipDigits value={String(Math.round(rangeKm))} size="lg" label={`${Math.round(rangeKm)} kilometres of range`} />
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <div>
-            <span className="unit mb-1.5 block !text-mustard">litres</span>
-            <FlipDigits value={liters.toFixed(1)} size="sm" label={`${liters.toFixed(1)} litres`} />
-          </div>
-          <div>
-            <span className="unit mb-1.5 block !text-mustard">fcfa / litre</span>
-            <FlipDigits value={String(Math.round(pricePerLiter))} size="sm" label={`${Math.round(pricePerLiter)} francs per litre`} />
-          </div>
-        </div>
-      </Link>
-
-      <Link to="/app/fuel/level" className="ticket flex items-center gap-4 px-4 py-3 transition hover:bg-panel-2">
-        <RetroDial percent={percent} bars={vehicle.fuel_gauge_bars} size={120} />
-        <span className="min-w-0">
-          <span className="block text-[17px] font-bold leading-snug text-fg">
-            {filled} of {vehicle.fuel_gauge_bars} bars — {mood.toLowerCase()}
+          <span className="lg:invisible">
+            <BrandMark />
           </span>
-          <span className="mt-1 block text-sm text-fg-2">{verdict ?? 'Tap to match your dashboard.'}</span>
-        </span>
-      </Link>
+          <label className="relative">
+            <span className="sr-only">Vehicle</span>
+            <select
+              value={vehicle.id}
+              onChange={(e) => {
+                trip.clear()
+                onSelect(e.target.value)
+              }}
+              className="chip appearance-none !pr-8"
+            >
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id} className="bg-panel text-fg">
+                  {v.model} · {v.tank_capacity_liters} L
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+          </label>
+        </div>
+
+        <div className="mt-4">
+          <WhereToSearch />
+        </div>
+
+        <div className="mt-auto">
+          <p className="readout text-[5.5rem] text-fg drop-shadow-[0_2px_18px_rgb(16_12_8/0.5)] sm:text-[6.5rem]">
+            <AnimatedNumber value={km} />
+            <span className="ml-2 font-[family-name:var(--font-sans)] text-2xl font-bold tracking-normal">{a ? 'km left' : 'km'}</span>
+          </p>
+          <p className="mt-3 max-w-[30ch] text-[15px] font-semibold leading-snug text-fg drop-shadow-[0_1px_8px_rgb(16_12_8/0.6)]" aria-live="polite">
+            {trip.isPending
+              ? `Calculating the road to ${trip.destination}…`
+              : trip.isError
+                ? `Couldn't route to ${trip.destination}. Try another destination.`
+                : a && trip.result
+                  ? a.status === 'insufficient'
+                    ? `${shortPlace(trip.result.destination)} is ${Math.round(trip.result.distance_km)} km. You'd be ${(a.shortage_liters ?? -a.remaining_fuel).toFixed(1)} L short. Refuel on the way.`
+                    : `${shortPlace(trip.result.destination)}, ${Math.round(trip.result.distance_km)} km. You arrive with ${a.remaining_fuel.toFixed(1)} L${a.status === 'low' ? ', on reserve.' : '.'}`
+                  : `${liters.toFixed(1)} L in the tank, ${filled} of ${vehicle.fuel_gauge_bars} bars.`}
+          </p>
+
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" role="group" aria-label="Preview a trip">
+            <button type="button" className="chip" aria-pressed={!trip.destination} onClick={trip.clear}>
+              Right now
+            </button>
+            {destinations.map((d) => (
+              <button key={d} type="button" className="chip" aria-pressed={trip.destination === d} onClick={() => trip.preview(d)}>
+                {trip.isPending && trip.destination === d && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {d}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 flex items-center gap-3">
+            {trip.result ? (
+              <button type="button" onClick={trip.open} className="btn btn-primary flex-1">
+                See the trip <ArrowRight className="h-5 w-5" />
+              </button>
+            ) : (
+              <Link to="/app/fuel/level" className="btn btn-ghost flex-1">
+                Update fuel level
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
     </section>
   )
 }

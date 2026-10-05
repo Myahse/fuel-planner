@@ -17,25 +17,25 @@ export function TripVerdict({ assessment }: { assessment: TripAssessment }) {
   const short = assessment.shortage_liters ?? -assessment.remaining_fuel
 
   return (
-    <div className={`border-l-2 ${t.border} py-1 pl-4`} role="status">
+    <div role="status">
       <p className="flex items-center gap-3">
         <span className={`lamp ${t.lamp}`} aria-hidden />
-        <span className="title text-[1.9rem] text-fg">{t.headline}</span>
+        <span className="title text-[2.4rem] text-fg">{t.headline}</span>
       </p>
-      <p className="mt-2 text-base text-fg-2">
+      <p className="mt-3 max-w-[34ch] text-base font-semibold text-fg">
         {status === 'insufficient' ? (
           <>
-            You&apos;re about <strong className="text-fg">{short.toFixed(1)} L</strong> short
+            You&apos;re about <strong className="font-extrabold">{short.toFixed(1)} L</strong> short
             {assessment.recommended_refuel ? (
               <>
-                {' '}— add <strong className="text-fg">{Math.round(assessment.recommended_refuel)} L</strong> to arrive safely
+                {' '}— add <strong className="font-extrabold">{Math.round(assessment.recommended_refuel)} L</strong> to arrive safely
               </>
             ) : null}
             .
           </>
         ) : (
           <>
-            You arrive with <strong className="text-fg">{left.toFixed(1)} L</strong>, about{' '}
+            You arrive with <strong className="font-extrabold">{left.toFixed(1)} L</strong>, about{' '}
             {Math.round(Math.max(0, assessment.remaining_range_km))} km to spare.
           </>
         )}

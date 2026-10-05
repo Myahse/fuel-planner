@@ -25,7 +25,7 @@ export function PageHeader({
         )}
         {right}
       </div>
-      <h1 className="title mt-5 text-[1.75rem] text-fg sm:text-[2rem]">{title}</h1>
+      <h1 className="title mt-5 text-[1.9rem] text-fg sm:text-[2.2rem]">{title}</h1>
       {subtitle && <p className="mt-2 max-w-md text-[15px] leading-relaxed text-fg-2">{subtitle}</p>}
     </header>
   )

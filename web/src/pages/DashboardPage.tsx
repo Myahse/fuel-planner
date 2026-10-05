@@ -1,29 +1,25 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight } from 'lucide-react'
+import { ArrowUpRight, Droplets, Fuel, Route } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { getFuelCurrent, listFuelTransactions, listTrips } from '../api/endpoints'
 import { useActiveVehicle } from '../hooks/useActiveVehicle'
 import { CarViewer } from '../components/car3d/CarViewer'
 import { VehicleHeroCard } from '../components/VehicleHeroCard'
-import { WhereToSearch } from '../components/WhereToSearch'
-import { BrandMark } from '../components/layout/BrandMark'
 import { EmptyState } from '../components/EmptyState'
 import { CardSkeleton } from '../components/Skeleton'
 import { MOCK_STATIONS } from '../data/mockStations'
+import { shortPlace } from '../lib/format'
 
-function greeting(hour = new Date().getHours()) {
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
-}
+const DEFAULT_DESTINATIONS = ['Yamoussoukro', 'Bouaké', 'San-Pédro', 'Korhogo']
 
 function shortDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: '2-digit' }).toUpperCase()
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
 export function DashboardPage() {
   const navigate = useNavigate()
-  const { vehicle, vehicles, vehiclesQuery, displayName, fuelPricePerLiter, setSelectedVehicleId } = useActiveVehicle()
+  const { vehicle, vehicles, vehiclesQuery, fuelPricePerLiter, setSelectedVehicleId } = useActiveVehicle()
 
   const fuelQuery = useQuery({
     queryKey: ['fuel-current', vehicle?.id],
@@ -45,94 +41,107 @@ export function DashboardPage() {
   const lastFill = txQuery.data?.[0]
   const lastTrip = tripsQuery.data?.find((t) => !vehicle || t.vehicle_id === vehicle.id) ?? tripsQuery.data?.[0]
   const cheapest = [...MOCK_STATIONS].sort((a, b) => a.pricePerLiter - b.pricePerLiter)[0]
+  // Recent destinations first, topped up with common long trips from Abidjan.
+  const recent = [...new Set((tripsQuery.data ?? []).map((t) => shortPlace(t.destination)))]
+  const destinations = [...new Set([...recent, ...DEFAULT_DESTINATIONS])].slice(0, 4)
+
+  if (vehiclesQuery.isLoading) return <CardSkeleton />
+
+  if (!vehicle) {
+    return (
+      <div className="space-y-5">
+        <CarViewer vehicle={{ make: 'Toyota', model: 'Corolla' }} variant="hero" autoRotate />
+        <EmptyState
+          title="Add your car to fill the tank"
+          description="FUELGO needs your tank size and consumption to tell you how far you can go."
+          actionLabel="Add a vehicle"
+          onAction={() => navigate('/app/vehicles/add')}
+        />
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-5">
-      <header className="flex items-center justify-between gap-3 pt-1 lg:pt-0">
-        <span className="pl-5 lg:hidden">
-          <BrandMark />
+    <div className="space-y-4">
+      {fuelQuery.isLoading ? (
+        <CardSkeleton />
+      ) : (
+        <VehicleHeroCard
+          key={vehicle.id}
+          vehicle={vehicle}
+          vehicles={vehicles}
+          onSelect={setSelectedVehicleId}
+          percent={pct}
+          liters={liters}
+          rangeKm={range}
+          destinations={destinations}
+        />
+      )}
+
+      <div className="grid grid-cols-2 gap-3">
+        <Tile to="/app/stations" icon={<Fuel className="h-4 w-4" />} label="Cheapest nearby" value={`${cheapest.pricePerLiter}`} unit="F/L" hint={cheapest.brand} />
+        <Tile
+          to="/app/statistics"
+          icon={<Droplets className="h-4 w-4" />}
+          label="100 km costs"
+          value={Math.round(consumption * fuelPricePerLiter).toLocaleString('en-US')}
+          unit="F"
+          hint={`${consumption.toFixed(1)} L/100 km`}
+        />
+      </div>
+
+      <Link to={lastTrip ? `/app/history/${lastTrip.id}` : '/app/plan'} className="glass flex items-center gap-4 px-4 py-3.5">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fg/10 text-fuel-1">
+          <Route className="h-5 w-5" />
         </span>
-        <p className="text-right text-sm font-medium text-fg-2">
-          {greeting()},<br className="lg:hidden" /> <span className="font-bold text-fg">{displayName}</span>
-        </p>
-      </header>
+        <span className="min-w-0 flex-1">
+          <span className="unit block">{lastTrip ? `last trip · ${shortDate(lastTrip.created_at)}` : 'no trips yet'}</span>
+          <span className="block truncate font-bold text-fg">
+            {lastTrip ? `${shortPlace(lastTrip.origin)} → ${shortPlace(lastTrip.destination)}` : 'Plan your first trip'}
+          </span>
+        </span>
+        <span className="font-[family-name:var(--font-display)] font-bold text-fg">{lastTrip ? `${Math.round(lastTrip.distance_km)} km` : ''}</span>
+      </Link>
 
-      {vehiclesQuery.isLoading && <CardSkeleton />}
+      <Link to={lastFill ? `/app/fuel/transactions/${lastFill.id}` : '/app/fuel/add'} className="glass flex items-center gap-4 px-4 py-3.5">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fg/10 text-fuel-1">
+          <Droplets className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="unit block">{lastFill ? `last fill-up · ${shortDate(lastFill.created_at)}` : 'fill-ups'}</span>
+          <span className="block truncate font-bold text-fg">{lastFill ? `${lastFill.liters.toFixed(1)} L for ${Math.round(lastFill.total_amount).toLocaleString('en-US')} F` : 'Log a fill-up to sharpen estimates'}</span>
+        </span>
+        <ArrowUpRight className="h-5 w-5 text-fg-3" />
+      </Link>
 
-      {!vehiclesQuery.isLoading && !vehicle && (
-        <>
-          <CarViewer vehicle={{ make: 'Toyota', model: 'Corolla' }} variant="hero" autoRotate className="rounded-[26px] border-[2.5px] border-espresso bg-panel" />
-          <EmptyState
-            title="Add your car to start"
-            description="FUELGO needs your tank size and consumption to tell you how far you can go."
-            actionLabel="Add a vehicle"
-            onAction={() => navigate('/app/vehicles/add')}
-          />
-        </>
-      )}
-
-      {vehicle && (
-        <>
-          <WhereToSearch />
-
-          {fuelQuery.isLoading ? (
-            <CardSkeleton />
-          ) : (
-            <VehicleHeroCard
-              vehicle={vehicle}
-              vehicles={vehicles}
-              onSelect={setSelectedVehicleId}
-              percent={pct}
-              liters={liters}
-              rangeKm={range}
-              pricePerLiter={fuelPricePerLiter}
-              verdict={`${consumption.toFixed(1)} L/100 km · about ${Math.round(consumption * fuelPricePerLiter).toLocaleString('en-US')} F per 100 km`}
-            />
-          )}
-
-          <Link
-            to="/app/stations"
-            className="flex items-center justify-between gap-3 rounded-[18px] border-[2.5px] border-dashed border-signal bg-[repeating-linear-gradient(-45deg,rgb(226_70_43/0.06)_0_8px,transparent_8px_16px)] px-4 py-3"
-          >
-            <span>
-              <span className="block text-sm font-bold text-fg">Cheapest pump nearby</span>
-              <span className="title block text-2xl text-signal">{cheapest.pricePerLiter} F/L</span>
+      <Link to="/app/vehicles" className="glass block overflow-hidden">
+        <CarViewer vehicle={vehicle} variant="banner" autoRotate />
+        <div className="flex items-center justify-between px-4 pb-4">
+          <span>
+            <span className="unit block">garage</span>
+            <span className="font-bold text-fg">
+              {vehicle.make} {vehicle.model}
             </span>
-            <span className="text-right text-sm font-bold text-fg">
-              {cheapest.brand}
-              <span className="flex items-center justify-end gap-1 font-medium text-fg-2">
-                on the route <ArrowRight className="h-4 w-4" />
-              </span>
-            </span>
-          </Link>
-
-          <Link
-            to={lastTrip ? `/app/history/${lastTrip.id}` : '/app/plan'}
-            className="flex overflow-hidden rounded-[18px] border-[2.5px] border-espresso bg-mustard shadow-[0_3px_0_var(--color-espresso)]"
-          >
-            <span className="flex flex-col justify-center border-r-[2.5px] border-dashed border-espresso px-3 py-2.5">
-              <span className="unit !text-espresso">last trip</span>
-              <span className="readout text-2xl text-espresso">{lastTrip ? shortDate(lastTrip.created_at) : '—'}</span>
-            </span>
-            <span className="flex min-w-0 flex-col justify-center px-4 py-2.5 text-espresso">
-              <span className="truncate text-[17px] font-bold">
-                {lastTrip ? `${lastTrip.origin} → ${lastTrip.destination}` : 'No trips yet — plan your first'}
-              </span>
-              <span className="text-sm">
-                {lastTrip ? `${Math.round(lastTrip.distance_km)} km · ${lastTrip.fuel_required_liters?.toFixed(1) ?? '—'} L` : 'Distance, fuel and cost in one tap'}
-              </span>
-            </span>
-          </Link>
-
-          <Link to={lastFill ? `/app/fuel/transactions/${lastFill.id}` : '/app/fuel/add'} className="flex items-center justify-between px-1 text-sm font-medium text-fg-2 hover:text-fg">
-            <span>
-              Last fill-up:{' '}
-              <span className="font-bold text-fg">{lastFill ? `${lastFill.liters.toFixed(1)} L · ${shortDate(lastFill.created_at)}` : 'none logged yet'}</span>
-            </span>
-            <span className="font-bold text-signal">Log one →</span>
-          </Link>
-        </>
-      )}
+          </span>
+          <ArrowUpRight className="h-5 w-5 text-fg-3" />
+        </div>
+      </Link>
     </div>
+  )
+}
+
+function Tile({ to, icon, label, value, unit, hint }: { to: string; icon: ReactNode; label: string; value: string; unit: string; hint: string }) {
+  return (
+    <Link to={to} className="glass block px-4 py-3.5">
+      <span className="flex items-center gap-2 text-fuel-1">
+        {icon}
+        <span className="unit">{label}</span>
+      </span>
+      <span className="readout mt-2 block text-[1.75rem] text-fg">
+        {value}
+        <span className="ml-1 font-[family-name:var(--font-sans)] text-sm font-bold tracking-normal text-fg-3">{unit}</span>
+      </span>
+      <span className="mt-1 block truncate text-xs font-semibold text-fg-3">{hint}</span>
+    </Link>
   )
 }

@@ -9,7 +9,7 @@ import 'leaflet/dist/leaflet.css'
 const markerIcon = (color: string) =>
   L.divIcon({
     className: '',
-    html: `<div style="width:16px;height:16px;border-radius:999px;background:${color};border:3px solid ${colors.espresso};box-shadow:0 2px 0 ${colors.espresso}"></div>`,
+    html: `<div style="width:14px;height:14px;border-radius:999px;background:${color};border:3px solid ${colors.bg};box-shadow:0 0 14px ${color}"></div>`,
     iconSize: [14, 14],
     iconAnchor: [7, 7],
   })
@@ -41,7 +41,7 @@ export default function LeafletMapView({
   }
 
   return (
-    <div className={`relative overflow-hidden bg-panel-2 ${className}`}>
+    <div className={`relative overflow-hidden bg-bg ${className}`}>
       <MapContainer
         center={[center.lat, center.lng]}
         zoom={zoom}
@@ -52,7 +52,7 @@ export default function LeafletMapView({
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
         {routePoints.length > 1 && (
           <>
@@ -70,11 +70,11 @@ export default function LeafletMapView({
         {markers.map((m) => {
           const color =
             m.variant === 'origin'
-              ? colors.mustard
+              ? colors.fg
               : m.variant === 'destination'
                 ? colors.signal
                 : m.variant === 'station'
-                  ? colors.teal
+                  ? colors.ok
                   : '#7cc4ff'
           return <Marker key={m.id} position={[m.lat, m.lng]} icon={markerIcon(color)} />
         })}

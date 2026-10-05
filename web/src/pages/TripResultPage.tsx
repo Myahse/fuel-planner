@@ -9,11 +9,11 @@ import { MOCK_STATIONS } from '../data/mockStations'
 import { TripResultCard } from '../components/TripResultCard'
 import { TripVerdict } from '../components/StatusCard'
 import { FuelRouteBar } from '../components/FuelRouteBar'
-import { VehicleSilhouette } from '../components/car3d/VehicleSilhouette'
+import { LiquidTank } from '../components/liquid/LiquidTank'
+import { ArrowLeft } from 'lucide-react'
 import { PrimaryButton } from '../components/buttons/PrimaryButton'
 import { SecondaryButton } from '../components/buttons/SecondaryButton'
-import { resolveBodyType, resolvePaint } from '../config/vehicleModels'
-import { assessTripFuel, vehicleFuelProfile, type VehicleFuelProfile } from '../lib/tripAssessment'
+import { RESERVE_LITERS, assessTripFuel, vehicleFuelProfile, type VehicleFuelProfile } from '../lib/tripAssessment'
 import { shortPlace } from '../lib/format'
 import { useTripRoute } from '../hooks/useTripRoute'
 
@@ -77,45 +77,50 @@ export function TripResultPage() {
 
   return (
     <div className="space-y-7">
-      <PageHeader title={`${shortPlace(result.origin)} → ${shortPlace(result.destination)}`} backTo="/app/plan" />
+      <section aria-label="Fuel on arrival" className="relative -mx-4 -mt-4 h-[min(64svh,540px)] min-h-[440px] overflow-hidden sm:mx-0 sm:mt-0 sm:rounded-[32px] sm:border sm:border-fg/10">
+        <LiquidTank
+          level={Math.max(0, view.assessment.remaining_fuel) / view.profile.tankLiters}
+          status={view.assessment.status === 'enough' ? 'ok' : view.assessment.status === 'low' ? 'low' : 'out'}
+          reserve={RESERVE_LITERS / view.profile.tankLiters}
+          bars={vehicle?.fuel_gauge_bars ?? 8}
+          className="absolute inset-0 bg-bg"
+        />
+        <div className="relative flex h-full flex-col px-5 pb-6 pt-4">
+          <div className="flex items-center gap-3">
+            <Link to="/app/plan" className="icon-btn h-11 w-11 shrink-0" aria-label="Back to planning">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <h1 className="title min-w-0 truncate text-xl text-fg">
+              {shortPlace(result.origin)} → {shortPlace(result.destination)}
+            </h1>
+          </div>
 
-      {vehicles.length > 1 && vehicle && (
-        <div className="-mx-4 -mt-1 flex gap-2 overflow-x-auto px-4 pb-1" role="tablist" aria-label="Compare vehicle">
-          {vehicles.map((v) => {
-            const active = v.id === vehicle.id
-            return (
-              <button
-                key={v.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setSelectedVehicleId(v.id)}
-                className={`flex shrink-0 items-center gap-2 rounded-full border-[2.5px] border-espresso px-3 py-1.5 text-sm font-bold transition ${
-                  active ? 'bg-espresso text-digit' : 'bg-panel text-fg hover:bg-panel-2'
-                }`}
-              >
-                <VehicleSilhouette bodyType={resolveBodyType(v)} paint={resolvePaint(v.make, v.paint_color)} className="h-4 w-10 text-fg" />
-                {v.model}
-              </button>
-            )
-          })}
+          {vehicles.length > 1 && vehicle && (
+            <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" role="group" aria-label="Compare vehicle">
+              {vehicles.map((v) => (
+                <button key={v.id} type="button" className="chip" aria-pressed={v.id === vehicle.id} onClick={() => setSelectedVehicleId(v.id)}>
+                  {v.model}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-auto drop-shadow-[0_2px_14px_rgb(16_12_8/0.55)]">
+            <TripVerdict assessment={view.assessment} />
+            {view.preview && (
+              <p className="mt-3 text-xs font-semibold text-fg">
+                Estimate for the {vehicle?.make} {vehicle?.model}, using its tank and consumption.
+              </p>
+            )}
+          </div>
         </div>
-      )}
-
-      <div>
-        <TripVerdict assessment={view.assessment} />
-        {view.preview && (
-          <p className="unit mt-3 pl-4">
-            estimate for the {vehicle?.make.toLowerCase()} {vehicle?.model.toLowerCase()} · its tank, its consumption
-          </p>
-        )}
-      </div>
+      </section>
 
       <FuelRouteBar distanceKm={result.distance_km} profile={view.profile} stations={MOCK_STATIONS} />
 
       <TripResultCard result={view.display} />
 
-      <div className="-mx-4 h-[30vh] min-h-[200px] overflow-hidden border-y border-line lg:hidden">
+      <div className="h-[30vh] min-h-[200px] overflow-hidden rounded-[26px] border border-fg/10 lg:hidden">
         <MapView
           className="h-full"
           markers={[

@@ -1,57 +1,52 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CarViewer } from '../components/car3d/CarViewer'
 import { BrandMark } from '../components/layout/BrandMark'
-import { FlipDigits } from '../components/retro/FlipDigits'
+import { LiquidTank } from '../components/liquid/LiquidTank'
+import { AnimatedNumber } from '../components/liquid/AnimatedNumber'
 
+/** Splash: the tank fills up as the page opens, then states what the app does. */
 export function OnboardingPage() {
-  return (
-    <div className="relative flex min-h-screen flex-col overflow-hidden">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 pt-6">
-        <BrandMark />
-        <Link to="/auth?mode=login" className="text-sm font-medium text-fg-2 hover:text-fg">
-          Sign in
-        </Link>
-      </header>
+  const [level, setLevel] = useState(0.05)
+  useEffect(() => {
+    const id = setTimeout(() => setLevel(0.72), 250)
+    return () => clearTimeout(id)
+  }, [])
 
-      <main className="mx-auto grid w-full max-w-5xl flex-1 items-center gap-8 px-6 pb-10 lg:grid-cols-[1fr_1.1fr]">
-        <div className="order-2 lg:order-1">
+  return (
+    <div className="relative flex min-h-[100svh] flex-col overflow-hidden">
+      <LiquidTank level={level} reserve={0.1} bars={8} className="absolute inset-0 bg-bg" />
+
+      <div className="relative mx-auto flex w-full max-w-xl flex-1 flex-col px-6 pb-10 pt-6">
+        <header className="flex items-center justify-between">
+          <BrandMark />
+          <Link to="/auth?mode=login" className="chip">
+            Sign in
+          </Link>
+        </header>
+
+        <div className="mt-14">
           <p className="unit">fuel planning · côte d&apos;ivoire</p>
-          <h1 className="title mt-4 text-[2.6rem] leading-[0.95] text-fg sm:text-[3.6rem]">
-            Know how far
-            <br />
-            your fuel
-            <br />
-            <span className="text-signal">takes you.</span>
-          </h1>
-          <p className="mt-6 max-w-sm text-base leading-relaxed text-fg-2">
-            Tell FUELGO how many bars your gauge shows. Before you leave, it tells you whether you&apos;ll make it, what it costs, and where to stop.
+          <h1 className="title mt-4 text-[2.6rem] text-fg sm:text-[3.4rem]">Know how far your fuel takes you.</h1>
+        </div>
+
+        <div className="mt-auto">
+          <p className="readout text-[5rem] text-fg drop-shadow-[0_2px_18px_rgb(16_12_8/0.45)]">
+            <AnimatedNumber value={level > 0.5 ? 412 : 0} duration={1400} />
+            <span className="ml-2 font-[family-name:var(--font-sans)] text-2xl font-bold tracking-normal">km</span>
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link to="/auth?mode=register" className="btn btn-primary px-8">
+          <p className="mt-3 max-w-[34ch] text-base font-semibold leading-relaxed text-fg">
+            Tell FUELGO how many bars your gauge shows. Before you leave, it tells you whether you&apos;ll make it, what it costs, and where to refuel.
+          </p>
+          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <Link to="/auth?mode=register" className="btn btn-ghost !bg-fg !text-signal-ink sm:flex-1">
               Get started
             </Link>
-            <Link to="/auth?mode=login" className="btn btn-ghost px-6">
+            <Link to="/auth?mode=login" className="btn btn-ghost sm:flex-1">
               I have an account
             </Link>
           </div>
         </div>
-
-        <div className="order-1 lg:order-2">
-          <CarViewer
-            vehicle={{ make: 'Toyota', model: 'RAV4', paint_color: '#f2b33d', body_style: 'suv' }}
-            variant="hero"
-            autoRotate
-            className="rounded-[26px] border-[2.5px] border-espresso bg-panel"
-          />
-          <div className="pump -mt-6 relative mx-4 flex items-center justify-between gap-3 p-4">
-            <span>
-              <span className="unit block !text-mustard">range · km</span>
-              <span className="mt-1 block text-xs text-digit/70">6 of 8 bars · 38.2 L</span>
-            </span>
-            <FlipDigits value="412" size="lg" label="412 kilometres of range" />
-          </div>
-        </div>
-      </main>
+      </div>
     </div>
   )
 }
