@@ -1,4 +1,5 @@
 import { ArrowDownUp } from 'lucide-react'
+import { PlaceField } from './PlaceField'
 
 type Props = {
   origin: string
@@ -17,14 +18,14 @@ export function TripInput({ origin, destination, onOriginChange, onDestinationCh
         <span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-fg" aria-hidden />
         <span className="min-w-0 flex-1">
           <span className="unit block">from</span>
-          <input className="w-full bg-transparent text-lg font-semibold text-fg outline-none" value={origin} onChange={(e) => onOriginChange(e.target.value)} />
+          <PlaceField aria-label="From" className="w-full bg-transparent text-lg font-semibold text-fg outline-none focus-visible:outline-none" value={origin} onChange={onOriginChange} />
         </span>
       </label>
       <label className="flex items-center gap-4 px-4 py-2.5">
         <span className="h-2.5 w-2.5 shrink-0 rounded-[1px] bg-signal" aria-hidden />
         <span className="min-w-0 flex-1">
           <span className="unit block">to</span>
-          <input className="w-full bg-transparent text-lg font-semibold text-fg outline-none" value={destination} onChange={(e) => onDestinationChange(e.target.value)} />
+          <PlaceField aria-label="To" className="w-full bg-transparent text-lg font-semibold text-fg outline-none focus-visible:outline-none" value={destination} onChange={onDestinationChange} />
         </span>
       </label>
       <button

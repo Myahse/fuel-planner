@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router-dom'
 import { LocateFixed, ZoomIn } from 'lucide-react'
 import { MapView } from '../components/map/MapView'
-import { PLACES, resolvePlace } from '../data/mapPlaces'
-import { interpolateRoute } from '../components/map/routeGeometry'
 import { useTripStore } from '../store/tripStore'
 import { FuelSegments } from '../components/FuelSegments'
+import { shortPlace } from '../lib/format'
+import { useTripRoute } from '../hooks/useTripRoute'
 
 /** Bottom heads-up strip shared by the driving screens: three readings and an End button. */
 export function DriveHud({ cells, onEnd, children }: { cells: [string, string, string][]; onEnd: () => void; children?: React.ReactNode }) {
@@ -34,23 +34,24 @@ export function DriveHud({ cells, onEnd, children }: { cells: [string, string, s
 export function ActiveTripPage() {
   const navigate = useNavigate()
   const { draft } = useTripStore()
-  const origin = resolvePlace(draft.origin) ?? PLACES.abidjan
-  const dest = resolvePlace(draft.destination) ?? PLACES.yamoussoukro
+  const trip = useTripRoute()
+  const dest = trip.destination
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-bg">
       <div className="border-b border-line bg-panel px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
         <p className="title text-2xl text-fg">Stay on the A3</p>
-        <p className="unit mt-1">120 km to {draft.destination.toLowerCase()}</p>
+        <p className="unit mt-1">120 km to {shortPlace(draft.destination).toLowerCase()}</p>
       </div>
 
       <div className="relative min-h-0 flex-1">
         <MapView
           className="h-full"
           zoom={9}
-          route={{ points: interpolateRoute(origin, dest) }}
+          mode="navigation"
+          route={{ points: trip.points }}
           markers={[
-            { id: 'u', lat: 5.9, lng: -4.5, variant: 'user' },
+            { id: 'u', ...trip.points[Math.floor(trip.points.length / 2)], variant: 'user' },
             { id: 'd', lat: dest.lat, lng: dest.lng, variant: 'destination' },
           ]}
         />

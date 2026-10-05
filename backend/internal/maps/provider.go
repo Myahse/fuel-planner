@@ -25,12 +25,12 @@ type RouteRequest struct {
 }
 
 type Route struct {
-	DistanceKm          float64
-	DurationSeconds     int
-	Polyline            string
-	Provider            string
-	OutboundDistanceKm  float64
-	ReturnDistanceKm    float64
+	DistanceKm         float64
+	DurationSeconds    int
+	Polyline           string
+	Provider           string
+	OutboundDistanceKm float64
+	ReturnDistanceKm   float64
 }
 
 type Station struct {

@@ -43,6 +43,17 @@ npm run dev
 - API: `http://localhost:8080/api/v1`
 - Web: `http://localhost:5173`
 
+### Maps (Mapbox)
+
+One Mapbox **public** token (`pk.…`) powers both sides. Without it the app still runs on demo routes and free CARTO tiles.
+
+| Where | Variable | What it does |
+|------|----------|--------------|
+| `backend/.env` | `MAP_PROVIDER=mapbox`, `MAP_API_KEY=pk.…`, `MAP_COUNTRY=ci` | Real geocoding + driving distance/time (Directions API); trip results include the road geometry |
+| `web/.env` | `VITE_MAPBOX_TOKEN=pk.…` | Dark vector maps (navigation-night style while driving) and place suggestions as you type |
+
+In the Mapbox dashboard, restrict the token to your web domains (URL restrictions). Fuel stations and prices are still sample data: Mapbox has no fuel-price source.
+
 ### 3D vehicle models (web)
 
 Car models are generated with [Meshy](https://www.meshy.ai) — one per body type — and optimised to well under 1 MB each:

@@ -3,14 +3,17 @@ import { MapView } from '../components/map/MapView'
 import { PageHeader } from '../components/layout/PageHeader'
 import { FuelStationCard } from '../components/FuelStationCard'
 import { MOCK_STATIONS } from '../data/mockStations'
-import { PLACES } from '../data/mapPlaces'
-import { interpolateRoute } from '../components/map/routeGeometry'
 import { EmptyState } from '../components/EmptyState'
+import { shortPlace } from '../lib/format'
+import { useTripRoute } from '../hooks/useTripRoute'
+import { useTripStore } from '../store/tripStore'
 
 type Tab = 'along' | 'cheapest'
 
 export function FuelStationsPage() {
   const [tab, setTab] = useState<Tab>('along')
+  const trip = useTripRoute()
+  const draft = useTripStore((s) => s.draft)
   const stations = [...MOCK_STATIONS].sort((a, b) =>
     tab === 'cheapest' ? a.pricePerLiter - b.pricePerLiter : a.distanceKmFromStart - b.distanceKmFromStart,
   )
@@ -18,7 +21,7 @@ export function FuelStationsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Fuel on the route" backTo="/app" subtitle="Abidjan → Yamoussoukro" />
+      <PageHeader title="Fuel on the route" backTo="/app" subtitle={`${shortPlace(draft.origin)} → ${shortPlace(draft.destination)}`} />
 
       <div className="seg" role="group" aria-label="Sort stations">
         <button type="button" aria-pressed={tab === 'along'} onClick={() => setTab('along')}>
@@ -32,7 +35,7 @@ export function FuelStationsPage() {
       <div className="-mx-4 h-52 overflow-hidden border-y border-line lg:hidden">
         <MapView
           className="h-full"
-          route={{ points: interpolateRoute(PLACES.abidjan, PLACES.yamoussoukro) }}
+          route={{ points: trip.points }}
           markers={stations.map((s) => ({ id: s.id, lat: s.lat, lng: s.lng, variant: 'station' as const }))}
         />
       </div>

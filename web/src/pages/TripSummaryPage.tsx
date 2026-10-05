@@ -1,24 +1,22 @@
 import { Link } from 'react-router-dom'
 import { MapView } from '../components/map/MapView'
-import { PLACES, resolvePlace } from '../data/mapPlaces'
-import { interpolateRoute } from '../components/map/routeGeometry'
 import { useTripStore } from '../store/tripStore'
 import { PageHeader } from '../components/layout/PageHeader'
 import { FuelSegments } from '../components/FuelSegments'
 import { SpecList } from '../components/ui'
-import { formatConsumption, formatDuration, formatFcfa, formatKm, formatLiters } from '../lib/format'
+import { shortPlace, formatConsumption, formatDuration, formatFcfa, formatKm, formatLiters } from '../lib/format'
+import { useTripRoute } from '../hooks/useTripRoute'
 
 export function TripSummaryPage() {
   const { draft, lastResult } = useTripStore()
-  const origin = resolvePlace(draft.origin) ?? PLACES.abidjan
-  const dest = resolvePlace(draft.destination) ?? PLACES.yamoussoukro
+  const trip = useTripRoute()
 
   return (
     <div className="space-y-7">
-      <PageHeader title="You've arrived" backTo="/app" subtitle={`${draft.origin} → ${draft.destination} · ${draft.trip_type.replace('_', ' ')}`} />
+      <PageHeader title="You've arrived" backTo="/app" subtitle={`${shortPlace(draft.origin)} → ${shortPlace(draft.destination)} · ${draft.trip_type.replace('_', ' ')}`} />
 
       <div className="-mx-4 h-44 overflow-hidden border-y border-line">
-        <MapView className="h-full" route={{ points: interpolateRoute(origin, dest) }} />
+        <MapView className="h-full" route={{ points: trip.points }} />
       </div>
 
       <p className="readout text-6xl text-fg">

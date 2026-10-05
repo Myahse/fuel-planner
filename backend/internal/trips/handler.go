@@ -46,7 +46,11 @@ type calculateResponse struct {
 	StartingFuelLitersEst    float64                     `json:"starting_fuel_liters_est"`
 	Assessment               fuelcalc.TripFuelAssessment `json:"assessment"`
 	MapProvider              string                      `json:"map_provider"`
-	Disclaimer               string                      `json:"disclaimer"`
+	// Route shape for drawing, as [lat, lng] pairs. Empty with the mock provider.
+	OriginCoords      [2]float64 `json:"origin_coords"`
+	DestinationCoords [2]float64 `json:"destination_coords"`
+	RoutePolyline     string     `json:"route_polyline,omitempty"` // Google polyline, precision 6
+	Disclaimer        string     `json:"disclaimer"`
 }
 
 func (h *Handler) Calculate(w http.ResponseWriter, r *http.Request) {
@@ -203,6 +207,9 @@ func toCalculateResponse(comp *TripComputation) calculateResponse {
 		StartingFuelLitersEst:    comp.StartingFuelLitersEst,
 		Assessment:               comp.Assessment,
 		MapProvider:              comp.MapProvider,
+		OriginCoords:             [2]float64{comp.OriginLat, comp.OriginLng},
+		DestinationCoords:        [2]float64{comp.DestLat, comp.DestLng},
+		RoutePolyline:            comp.RoutePolyline,
 		Disclaimer:               "Fuel and range figures are estimates based on your gauge and consumption profile.",
 	}
 }

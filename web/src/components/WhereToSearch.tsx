@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Loader2, SlidersHorizontal } from 'lucide-react'
 import { useTripStore } from '../store/tripStore'
 import { useTripCalculation } from '../hooks/useTripCalculation'
+import { PlaceField } from './PlaceField'
+import { shortPlace } from '../lib/format'
 
 /** Home-screen shortcut: type a destination and jump straight to the trip result. */
 export function WhereToSearch() {
@@ -23,12 +25,12 @@ export function WhereToSearch() {
     <div>
       <form onSubmit={submit} role="search" className="flex items-stretch rounded-sm border border-line-strong bg-panel transition focus-within:border-signal">
         <label className="flex min-w-0 flex-1 flex-col justify-center px-4 py-2.5">
-          <span className="unit">from {origin.toLowerCase()} to</span>
-          <input
-            className="w-full bg-transparent text-xl font-semibold text-fg outline-none placeholder:text-fg-3"
+          <span className="unit">from {shortPlace(origin).toLowerCase()} to</span>
+          <PlaceField
+            className="w-full bg-transparent text-xl font-semibold text-fg outline-none focus-visible:outline-none placeholder:text-fg-3"
             placeholder="Where to?"
             value={destination}
-            onChange={(e) => setDestination(e.target.value)}
+            onChange={setDestination}
             enterKeyHint="go"
             aria-label="Destination"
           />

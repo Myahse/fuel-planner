@@ -5,9 +5,7 @@ import { useTripStore, type TripPlanDraft } from '../store/tripStore'
 import { useActiveVehicle } from '../hooks/useActiveVehicle'
 import { PageHeader } from '../components/layout/PageHeader'
 import { MapView } from '../components/map/MapView'
-import { PLACES, resolvePlace } from '../data/mapPlaces'
 import { MOCK_STATIONS } from '../data/mockStations'
-import { interpolateRoute } from '../components/map/routeGeometry'
 import { TripResultCard } from '../components/TripResultCard'
 import { TripVerdict } from '../components/StatusCard'
 import { FuelRouteBar } from '../components/FuelRouteBar'
@@ -16,6 +14,8 @@ import { PrimaryButton } from '../components/buttons/PrimaryButton'
 import { SecondaryButton } from '../components/buttons/SecondaryButton'
 import { resolveBodyType, resolvePaint } from '../config/vehicleModels'
 import { assessTripFuel, vehicleFuelProfile, type VehicleFuelProfile } from '../lib/tripAssessment'
+import { shortPlace } from '../lib/format'
+import { useTripRoute } from '../hooks/useTripRoute'
 
 function loadSession<T>(key: string): T | null {
   const raw = sessionStorage.getItem(key)
@@ -32,6 +32,7 @@ export function TripResultPage() {
   const { lastResult } = useTripStore()
   const { vehicle, vehicles, fuelPricePerLiter, setSelectedVehicleId } = useActiveVehicle()
   const result = lastResult ?? loadSession<TripCalculateResult>('lastTripResult')
+  const trip = useTripRoute()
   const calculatedFor = loadSession<TripPlanDraft>('lastTripPlan')?.vehicle_id
 
   // The server result is authoritative for the vehicle it was calculated for; switching
@@ -70,13 +71,13 @@ export function TripResultPage() {
     )
   }
 
-  const origin = resolvePlace(result.origin) ?? PLACES.abidjan
-  const dest = resolvePlace(result.destination) ?? PLACES.yamoussoukro
+  const origin = trip.origin
+  const dest = trip.destination
   const needsFuel = view.assessment.status !== 'enough'
 
   return (
     <div className="space-y-7">
-      <PageHeader title={`${result.origin} → ${result.destination}`} backTo="/app/plan" />
+      <PageHeader title={`${shortPlace(result.origin)} → ${shortPlace(result.destination)}`} backTo="/app/plan" />
 
       {vehicles.length > 1 && vehicle && (
         <div className="-mt-1 flex gap-5 overflow-x-auto border-b border-line" role="tablist" aria-label="Compare vehicle">
@@ -121,7 +122,7 @@ export function TripResultPage() {
             { id: 'o', lat: origin.lat, lng: origin.lng, variant: 'origin' },
             { id: 'd', lat: dest.lat, lng: dest.lng, variant: 'destination' },
           ]}
-          route={{ points: interpolateRoute(origin, dest) }}
+          route={{ points: trip.points }}
         />
       </div>
 

@@ -28,3 +28,8 @@ export function formatPercent(n: number) {
 export function formatPricePerLiter(n: number) {
   return `${Math.round(n).toLocaleString('en-US')} FCFA/L`
 }
+
+/** "Yamoussoukro, Lacs, Côte d'Ivoire" → "Yamoussoukro" — geocoded labels are long; titles want the place. */
+export function shortPlace(label: string) {
+  return label.split(',')[0].trim() || label
+}

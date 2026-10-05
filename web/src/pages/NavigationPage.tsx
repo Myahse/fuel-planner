@@ -1,18 +1,18 @@
 import { useNavigate } from 'react-router-dom'
 import { ArrowUp } from 'lucide-react'
 import { MapView } from '../components/map/MapView'
-import { PLACES, resolvePlace } from '../data/mapPlaces'
-import { interpolateRoute } from '../components/map/routeGeometry'
 import { useTripStore } from '../store/tripStore'
 import { MOCK_STATIONS } from '../data/mockStations'
 import { DriveHud } from './ActiveTripPage'
+import { useTripRoute } from '../hooks/useTripRoute'
 
 /** Turn-by-turn view. Maneuver text is a placeholder until a routing provider is connected. */
 export function NavigationPage() {
   const navigate = useNavigate()
-  const { draft, lastResult } = useTripStore()
-  const origin = resolvePlace(draft.origin) ?? PLACES.abidjan
-  const dest = resolvePlace(draft.destination) ?? PLACES.yamoussoukro
+  const { lastResult } = useTripStore()
+  const trip = useTripRoute()
+  const origin = trip.origin
+  const dest = trip.destination
   const hours = Math.floor((lastResult?.estimated_duration_seconds ?? 20400) / 3600)
   const mins = Math.round(((lastResult?.estimated_duration_seconds ?? 20400) % 3600) / 60)
 
@@ -33,12 +33,13 @@ export function NavigationPage() {
       <MapView
         className="min-h-0 flex-1"
         zoom={8}
+        mode="navigation"
         markers={[
           { id: 'o', lat: origin.lat, lng: origin.lng, variant: 'origin' },
           { id: 'd', lat: dest.lat, lng: dest.lng, variant: 'destination' },
           ...MOCK_STATIONS.map((s) => ({ id: s.id, lat: s.lat, lng: s.lng, variant: 'station' as const })),
         ]}
-        route={{ points: interpolateRoute(origin, dest) }}
+        route={{ points: trip.points }}
       />
 
       <DriveHud

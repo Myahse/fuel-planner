@@ -43,7 +43,14 @@ func main() {
 	vehicleRepo := vehicles.NewRepository(pool)
 	vehicleHandler := vehicles.NewHandler(vehicleRepo)
 	fuelHandler := fuel.NewHandler(pool, vehicleRepo)
-	mapProvider := maps.NewMockProvider()
+	var mapProvider maps.MapProvider = maps.NewMockProvider()
+	if cfg.MapProvider == "mapbox" {
+		if cfg.MapAPIKey == "" {
+			log.Fatalf("MAP_PROVIDER=mapbox requires MAP_API_KEY (a Mapbox access token)")
+		}
+		mapProvider = maps.NewMapboxProvider(cfg.MapAPIKey, cfg.MapCountry)
+	}
+	log.Printf("map provider: %s", cfg.MapProvider)
 	tripHandler := trips.NewHandler(pool, vehicleRepo, mapProvider)
 
 	r := chi.NewRouter()

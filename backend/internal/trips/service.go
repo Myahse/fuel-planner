@@ -56,6 +56,7 @@ type TripComputation struct {
 	ConsumptionLPer100       float64
 	Assessment               fuelcalc.TripFuelAssessment
 	MapProvider              string
+	RoutePolyline            string
 	FuelPricePerLiter        float64
 }
 
@@ -119,6 +120,7 @@ func ComputeTrip(ctx context.Context, mapProvider maps.MapProvider, v *vehicles.
 		ConsumptionLPer100:       consumption,
 		Assessment:               assessment,
 		MapProvider:              route.Provider,
+		RoutePolyline:            route.Polyline,
 		FuelPricePerLiter:        price,
 	}, nil
 }

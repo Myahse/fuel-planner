@@ -2,18 +2,18 @@ import { useLocation } from 'react-router-dom'
 import { useMemo } from 'react'
 import { MapView } from '../map/MapView'
 import { useTripStore } from '../../store/tripStore'
-import { PLACES, resolvePlace } from '../../data/mapPlaces'
-import { interpolateRoute } from '../map/routeGeometry'
 import { MOCK_STATIONS } from '../../data/mockStations'
 import { useActiveVehicle } from '../../hooks/useActiveVehicle'
 import { useQuery } from '@tanstack/react-query'
 import { getFuelCurrent } from '../../api/endpoints'
 import { estimatedRangeKm } from '../../lib/fuelMath'
+import { useTripRoute } from '../../hooks/useTripRoute'
 
 export function ContextMapPanel() {
   const { pathname } = useLocation()
-  const { draft, lastResult } = useTripStore()
+  const { draft } = useTripStore()
   const { vehicle } = useActiveVehicle()
+  const trip = useTripRoute()
 
   const fuelQuery = useQuery({
     queryKey: ['fuel-current', vehicle?.id],
@@ -22,9 +22,9 @@ export function ContextMapPanel() {
   })
 
   const mapProps = useMemo(() => {
-    const origin = resolvePlace(draft.origin) ?? PLACES.abidjan
-    const dest = resolvePlace(draft.destination) ?? PLACES.yamoussoukro
-    const routePoints = interpolateRoute(origin, dest)
+    const origin = trip.origin
+    const dest = trip.destination
+    const routePoints = trip.points
     const showRoute =
       pathname.includes('/plan') ||
       pathname.includes('/trip-result') ||
@@ -63,7 +63,7 @@ export function ContextMapPanel() {
           : undefined,
       loading: fuelQuery.isLoading && Boolean(vehicle),
     }
-  }, [pathname, draft, vehicle, fuelQuery.data, fuelQuery.isLoading, lastResult])
+  }, [pathname, trip, draft, vehicle, fuelQuery.data, fuelQuery.isLoading])
 
   const hiddenOnMobile =
     pathname.includes('/navigation') ||
@@ -78,7 +78,7 @@ export function ContextMapPanel() {
     >
       <div className="sticky top-0 h-screen">
         <MapView className="h-full min-h-[320px]" {...mapProps} />
-        <p className="unit pointer-events-none absolute left-4 top-4 z-[500] rounded-xs bg-bg/80 px-2 py-1 backdrop-blur">
+        <p className="unit pointer-events-none absolute right-4 top-4 z-[500] rounded-xs bg-bg/80 px-2 py-1 backdrop-blur">
           {mapProps.route ? 'route' : 'range'} · live
         </p>
       </div>

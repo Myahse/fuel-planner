@@ -19,4 +19,6 @@ export type MapViewProps = {
   className?: string
   interactive?: boolean
   loading?: boolean
+  /** 'navigation' tilts the camera and uses the night-driving style (Mapbox only) */
+  mode?: 'default' | 'navigation'
 }

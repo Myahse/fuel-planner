@@ -49,6 +49,11 @@ export type TripCalculateResult = {
   starting_fuel_liters_est: number
   assessment: TripAssessment
   map_provider: string
+  /** [lat, lng] of the geocoded endpoints */
+  origin_coords?: [number, number]
+  destination_coords?: [number, number]
+  /** Road geometry, Google polyline precision 6 — present when the backend routes with Mapbox */
+  route_polyline?: string
   disclaimer: string
 }
 

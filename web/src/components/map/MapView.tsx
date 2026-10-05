@@ -1,84 +1,19 @@
-import { useEffect, useMemo } from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, Circle, useMap } from 'react-leaflet'
-import L from 'leaflet'
+import { lazy, Suspense } from 'react'
 import type { MapViewProps } from './types'
 import { MapSkeleton } from '../Skeleton'
-import { colors } from '../../design/tokens'
-import 'leaflet/dist/leaflet.css'
+import { MAPBOX_TOKEN } from '../../config/mapbox'
 
-const markerIcon = (color: string) =>
-  L.divIcon({
-    className: '',
-    html: `<div style="width:12px;height:12px;border-radius:2px;background:${color};border:2px solid ${colors.bg};box-shadow:0 0 0 1px ${color},0 0 14px ${color}"></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-  })
+// Each engine is its own chunk, so pages without a map never download one.
+const MapboxMapView = lazy(() => import('./MapboxMapView'))
+const LeafletMapView = lazy(() => import('./LeafletMapView'))
 
-function FitBounds({ points }: { points: { lat: number; lng: number }[] }) {
-  const map = useMap()
-  useEffect(() => {
-    if (points.length < 2) return
-    const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lng]))
-    map.fitBounds(bounds, { padding: [40, 40] })
-  }, [map, points])
-  return null
-}
-
-export function MapView({
-  center = { lat: 5.36, lng: -4.01 },
-  zoom = 7,
-  markers = [],
-  route,
-  rangeCircle,
-  className = '',
-  interactive = true,
-  loading,
-}: MapViewProps) {
-  const routePoints = useMemo(() => route?.points ?? [], [route?.points])
-
-  if (loading) {
-    return <MapSkeleton />
-  }
-
+/** Mapbox when VITE_MAPBOX_TOKEN is set, otherwise Leaflet on free CARTO tiles. Same props either way. */
+export function MapView(props: MapViewProps) {
+  if (props.loading) return <MapSkeleton />
+  const Engine = MAPBOX_TOKEN ? MapboxMapView : LeafletMapView
   return (
-    <div className={`relative overflow-hidden bg-bg ${className}`}>
-      <MapContainer
-        center={[center.lat, center.lng]}
-        zoom={zoom}
-        scrollWheelZoom={interactive}
-        dragging={interactive}
-        className="h-full w-full min-h-[inherit] z-0"
-        style={{ minHeight: 'inherit' }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-        />
-        {routePoints.length > 1 && (
-          <>
-            <Polyline positions={routePoints.map((p) => [p.lat, p.lng])} pathOptions={{ color: colors.signal, weight: 4, opacity: 0.95 }} />
-            <FitBounds points={routePoints} />
-          </>
-        )}
-        {rangeCircle && (
-          <Circle
-            center={[rangeCircle.center.lat, rangeCircle.center.lng]}
-            radius={rangeCircle.radiusMeters}
-            pathOptions={{ color: colors.signal, fillColor: colors.signal, fillOpacity: 0.06, weight: 1, dashArray: '4 6' }}
-          />
-        )}
-        {markers.map((m) => {
-          const color =
-            m.variant === 'origin'
-              ? colors.fg
-              : m.variant === 'destination'
-                ? colors.signal
-                : m.variant === 'station'
-                  ? colors.ok
-                  : '#7cc4ff'
-          return <Marker key={m.id} position={[m.lat, m.lng]} icon={markerIcon(color)} />
-        })}
-      </MapContainer>
-    </div>
+    <Suspense fallback={<MapSkeleton />}>
+      <Engine {...props} />
+    </Suspense>
   )
 }

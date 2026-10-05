@@ -19,6 +19,7 @@
     "framer-motion": "^14.0.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.52.0",
+    "mapbox-gl": "^3.32.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-leaflet": "^5.0.0",

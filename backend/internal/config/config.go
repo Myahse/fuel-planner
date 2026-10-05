@@ -18,6 +18,7 @@ type Config struct {
 	CORSAllowedOrigins []string
 	MapProvider        string
 	MapAPIKey          string
+	MapCountry         string
 }
 
 func Load() (Config, error) {
@@ -47,6 +48,7 @@ func Load() (Config, error) {
 		CORSAllowedOrigins: origins,
 		MapProvider:        getEnv("MAP_PROVIDER", "mock"),
 		MapAPIKey:          getEnv("MAP_API_KEY", ""),
+		MapCountry:         getEnv("MAP_COUNTRY", "ci"),
 	}
 
 	if cfg.DatabaseURL == "" {
