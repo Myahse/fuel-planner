@@ -1,0 +1,72 @@
+openapi: 3.0.3
+info:
+  title: Fuel Trip Planner API
+  version: 0.1.0
+  description: REST API for fuel-aware trip planning.
+servers:
+  - url: http://localhost:8080/api/v1
+paths:
+  /auth/register:
+    post:
+      summary: Register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8 }
+                display_name: { type: string }
+      responses:
+        '201':
+          description: Tokens issued
+  /auth/login:
+    post:
+      summary: Login
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+  /vehicles:
+    get:
+      summary: List vehicles
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: Create vehicle
+      security: [{ bearerAuth: [] }]
+  /vehicles/{id}:
+    get:
+      summary: Get vehicle
+      security: [{ bearerAuth: [] }]
+    put:
+      summary: Update vehicle
+      security: [{ bearerAuth: [] }]
+    delete:
+      summary: Delete vehicle
+      security: [{ bearerAuth: [] }]
+  /vehicles/{id}/default:
+    post:
+      summary: Set default vehicle
+      security: [{ bearerAuth: [] }]
+  /fuel/current:
+    get:
+      summary: Get estimated fuel for vehicle
+      security: [{ bearerAuth: [] }]
+    put:
+      summary: Update fuel percentage (gauge estimate)
+      security: [{ bearerAuth: [] }]
+  /fuel/transactions:
+    get:
+      summary: List fuel transactions
+      security: [{ bearerAuth: [] }]
+    post:
+      summary: Record fuel purchase
+      security: [{ bearerAuth: [] }]
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

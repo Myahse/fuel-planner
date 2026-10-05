@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+web/dist/
+.dart_tool/
+.packages
+build/
+
+# Environment
+.env
+.env.local
+*.pem
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+backend/bin/
+backend/tmp/
+
+# Flutter
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+
+# Logs
+*.log

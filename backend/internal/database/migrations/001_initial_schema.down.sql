@@ -1,0 +1,16 @@
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS user_settings;
+DROP TABLE IF EXISTS trip_routes;
+DROP TABLE IF EXISTS trip_stops;
+DROP TABLE IF EXISTS trips;
+DROP TABLE IF EXISTS fuel_transactions;
+DROP TABLE IF EXISTS fuel_station_prices;
+DROP TABLE IF EXISTS fuel_stations;
+DROP TABLE IF EXISTS fuel_prices;
+DROP TABLE IF EXISTS fuel_levels;
+DROP TABLE IF EXISTS vehicles;
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS users;
+DROP TYPE IF EXISTS trip_status;
+DROP TYPE IF EXISTS trip_type;
+DROP TYPE IF EXISTS fuel_type;
