@@ -36,66 +36,42 @@ export function FuelLevelPage({ mode = 'onboarding' }: { mode?: 'onboarding' | '
     return <InfoNote>Add a vehicle first.</InfoNote>
   }
 
+  const delta = displayPct - previous
+
   return (
-    <div className="mx-auto max-w-lg">
+    <div className="space-y-8">
       <PageHeader
-        title="How much fuel do you have?"
-        subtitle="Adjust the fuel level to match your car's fuel indicator."
+        title="What does your gauge say?"
+        subtitle={`${vehicle.make} ${vehicle.model} · ${vehicle.fuel_gauge_bars}-bar gauge`}
         backTo="/app"
         right={
           mode === 'onboarding' ? (
-            <Link to="/app" className="text-sm font-semibold text-brand-800">Skip</Link>
+            <Link to="/app" className="text-sm font-medium text-fg-3 hover:text-fg">
+              Skip
+            </Link>
           ) : undefined
         }
       />
 
-      <div className="mb-4 flex justify-center gap-2">
-        {[1, 2, 3].map((s) => (
-          <span key={s} className={`h-1.5 w-8 rounded-full ${s <= 2 ? 'bg-brand-800' : 'bg-slate-200'}`} />
-        ))}
-      </div>
+      <FuelGauge
+        bars={vehicle.fuel_gauge_bars}
+        percentage={displayPct}
+        tankCapacityLiters={vehicle.tank_capacity_liters}
+        consumptionLPer100Km={vehicle.mixed_consumption}
+        onChange={setPct}
+      />
 
-      <div className="rounded-3xl bg-white p-5 shadow-card">
-        <FuelGauge
-          bars={vehicle.fuel_gauge_bars}
-          percentage={displayPct}
-          tankCapacityLiters={vehicle.tank_capacity_liters}
-          consumptionLPer100Km={vehicle.mixed_consumption}
-          onChange={setPct}
-        />
-      </div>
-
-      <div className="mt-4">
-      <InfoNote>
-        <strong className="text-ink">This is an estimate.</strong> Fuel gauges are not perfectly linear. You can
-        adjust your fuel level anytime.
-      </InfoNote>
-      </div>
-
-      {mode === 'edit' && (
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-          <div className="rounded-xl bg-white p-3 shadow-card">
-            <p className="text-muted">Previous</p>
-            <p className="font-bold">{previous}%</p>
-          </div>
-          <div className="rounded-xl bg-brand-50 p-3">
-            <p className="text-muted">New</p>
-            <p className="font-bold text-brand-800">{displayPct}%</p>
-          </div>
-          <div className="rounded-xl bg-white p-3 shadow-card">
-            <p className="text-muted">Change</p>
-            <p className="font-bold">{displayPct - previous}%</p>
-          </div>
-        </div>
+      {delta !== 0 && (
+        <p className="unit">
+          was {previous}% · now {displayPct}% · {delta > 0 ? '+' : ''}
+          {delta}%
+        </p>
       )}
 
-      <PrimaryButton
-        className="mt-6"
-        fullWidth
-        onClick={() => saveMutation.mutate()}
-        disabled={saveMutation.isPending}
-      >
-        {mode === 'edit' ? 'Update Fuel Level' : 'Continue →'}
+      <InfoNote>Gauges aren&apos;t perfectly linear, so treat this as an estimate. Update it whenever you fill up or it looks off.</InfoNote>
+
+      <PrimaryButton fullWidth onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+        {saveMutation.isPending ? 'Saving…' : mode === 'edit' ? 'Update fuel level' : 'Save fuel level'}
       </PrimaryButton>
     </div>
   )

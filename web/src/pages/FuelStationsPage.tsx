@@ -7,59 +7,46 @@ import { PLACES } from '../data/mapPlaces'
 import { interpolateRoute } from '../components/map/routeGeometry'
 import { EmptyState } from '../components/EmptyState'
 
-type Tab = 'along' | 'cheapest' | 'nearest'
+type Tab = 'along' | 'cheapest'
 
 export function FuelStationsPage() {
   const [tab, setTab] = useState<Tab>('along')
-  const stations = [...MOCK_STATIONS].sort((a, b) => {
-    if (tab === 'cheapest') return a.pricePerLiter - b.pricePerLiter
-    if (tab === 'nearest') return a.distanceKmFromStart - b.distanceKmFromStart
-    return a.distanceKmFromStart - b.distanceKmFromStart
-  })
+  const stations = [...MOCK_STATIONS].sort((a, b) =>
+    tab === 'cheapest' ? a.pricePerLiter - b.pricePerLiter : a.distanceKmFromStart - b.distanceKmFromStart,
+  )
+  const cheapestId = [...MOCK_STATIONS].sort((a, b) => a.pricePerLiter - b.pricePerLiter)[0]?.id
 
   return (
-    <div className="space-y-4">
-      <PageHeader title="Fuel Stations" backTo="/app" />
+    <div className="space-y-6">
+      <PageHeader title="Fuel on the route" backTo="/app" subtitle="Abidjan → Yamoussoukro" />
 
-      <div className="flex gap-2 rounded-2xl bg-slate-100 p-1">
-        {[
-          { id: 'along' as Tab, label: 'Along Route' },
-          { id: 'cheapest' as Tab, label: 'Cheapest' },
-          { id: 'nearest' as Tab, label: 'Nearest' },
-        ].map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`flex-1 rounded-xl py-2 text-xs font-semibold sm:text-sm ${
-              tab === t.id ? 'bg-white text-brand-800 shadow-sm' : 'text-muted'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      <div className="seg" role="group" aria-label="Sort stations">
+        <button type="button" aria-pressed={tab === 'along'} onClick={() => setTab('along')}>
+          In route order
+        </button>
+        <button type="button" aria-pressed={tab === 'cheapest'} onClick={() => setTab('cheapest')}>
+          Cheapest first
+        </button>
       </div>
 
-      <div className="-mx-4 h-48 overflow-hidden lg:hidden">
+      <div className="-mx-4 h-52 overflow-hidden border-y border-line lg:hidden">
         <MapView
           className="h-full"
           route={{ points: interpolateRoute(PLACES.abidjan, PLACES.yamoussoukro) }}
-          markers={stations.map((s) => ({
-            id: s.id,
-            lat: s.lat,
-            lng: s.lng,
-            variant: 'station' as const,
-          }))}
+          markers={stations.map((s) => ({ id: s.id, lat: s.lat, lng: s.lng, variant: 'station' as const }))}
         />
       </div>
 
-      <div className="space-y-3">
-        {stations.length === 0 ? (
-          <EmptyState title="No fuel stations found nearby." description="Try another route or widen your search." />
-        ) : (
-          stations.map((s) => <FuelStationCard key={s.id} station={s} />)
-        )}
-      </div>
+      {stations.length === 0 ? (
+        <EmptyState title="No stations on this route" description="Try another route or widen your search." />
+      ) : (
+        <div className="-mx-4 divide-y divide-line border-y border-line sm:mx-0">
+          {stations.map((s) => (
+            <FuelStationCard key={s.id} station={s} cheapest={s.id === cheapestId} />
+          ))}
+        </div>
+      )}
+      <p className="unit">sample station data · prices may differ at the pump</p>
     </div>
   )
 }

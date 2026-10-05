@@ -6,7 +6,6 @@ import { MapView } from '../components/map/MapView'
 import { MOCK_STATIONS } from '../data/mockStations'
 import { PLACES } from '../data/mapPlaces'
 import { estimatedRangeKm } from '../lib/fuelMath'
-import { PrimaryButton } from '../components/buttons/PrimaryButton'
 import { PageHeader } from '../components/layout/PageHeader'
 
 export function MapHomePage() {
@@ -22,14 +21,14 @@ export function MapHomePage() {
   const rangeKm = fuelQuery.data?.estimated_range_km ?? estimatedRangeKm(liters, vehicle?.mixed_consumption ?? 7.5)
 
   return (
-    <div className="space-y-4">
-      <PageHeader title="Map" backTo="/app" />
+    <div className="space-y-6">
+      <PageHeader title="How far can I go?" backTo="/app" />
 
-      <div className="h-[55vh] min-h-[320px] overflow-hidden rounded-3xl shadow-card lg:hidden">
+      <div className="-mx-4 h-[56vh] min-h-[320px] overflow-hidden border-y border-line lg:hidden">
         <MapView
           className="h-full"
           center={center}
-          zoom={9}
+          zoom={8}
           rangeCircle={{ center, radiusMeters: rangeKm * 1000 }}
           markers={[
             { id: 'me', lat: center.lat, lng: center.lng, variant: 'user' },
@@ -39,12 +38,18 @@ export function MapHomePage() {
         />
       </div>
 
-      <p className="text-sm text-muted">
-        Green circle shows your estimated driving range ({Math.round(rangeKm)} km) from your current area.
-      </p>
+      <div className="flex items-end justify-between gap-4">
+        <div>
+          <p className="readout text-6xl text-fg">
+            {Math.round(rangeKm)}
+            <span className="unit ml-1.5 text-sm">km</span>
+          </p>
+          <p className="mt-2 text-sm text-fg-3">The dashed ring is how far your tank reaches in a straight line.</p>
+        </div>
+      </div>
 
-      <Link to="/app/plan">
-        <PrimaryButton fullWidth>Plan a Trip →</PrimaryButton>
+      <Link to="/app/plan" className="btn btn-primary w-full">
+        Plan a trip
       </Link>
     </div>
   )

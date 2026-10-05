@@ -1,6 +1,3 @@
-import { SecondaryButton } from './buttons/SecondaryButton'
-import { PrimaryButton } from './buttons/PrimaryButton'
-import { formatConsumption, formatLiters } from '../lib/format'
 import type { Vehicle } from '../api/types'
 import { CarViewer } from './car3d/CarViewer'
 import { VehicleSilhouette } from './car3d/VehicleSilhouette'
@@ -20,101 +17,86 @@ type Props = {
 export function VehicleCard({ vehicle, featured, onSetDefault, onEdit, onCustomize, onSelect, compact, show3d = true }: Props) {
   if (compact) {
     return (
-      <button type="button" onClick={onSelect} className="card-surface card-interactive flex w-full items-center gap-3 p-3 text-left">
+      <button type="button" onClick={onSelect} className="row-link w-full text-left">
         <VehicleThumb vehicle={vehicle} />
-        <div className="min-w-0 flex-1">
-          <p className="font-semibold text-ink">{vehicle.make} {vehicle.model}</p>
-          <p className="text-xs text-muted">{vehicle.year} • {vehicle.engine} • {vehicle.fuel_type}</p>
-        </div>
-        {onSelect && <span className="text-xs font-semibold text-brand-800">Select</span>}
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold text-fg">
+            {vehicle.make} {vehicle.model}
+          </span>
+          <span className="unit block">
+            {vehicle.year} · {vehicle.tank_capacity_liters} L · {vehicle.mixed_consumption.toFixed(1)} L/100km
+          </span>
+        </span>
+        {onSelect && <span className="text-sm font-medium text-fg-3">Drive this</span>}
       </button>
     )
   }
 
   return (
-    <div className="card-surface overflow-hidden p-0">
+    <article>
       {show3d && (
-        <CarViewer vehicle={vehicle} variant="card" interactive={featured} autoRotate={!featured} />
+        <div className="-mx-4 sm:mx-0">
+          <CarViewer vehicle={vehicle} variant="hero" interactive={featured} autoRotate={!featured} />
+        </div>
       )}
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <h3 className="text-xl font-bold text-ink">{vehicle.make} {vehicle.model}</h3>
-            <p className="mt-1 text-sm text-muted capitalize">
-              {vehicle.year} • {vehicle.engine} • {vehicle.fuel_type}
-            </p>
-          </div>
-          {vehicle.is_default && (
-            <span className="rounded-full bg-brand-100 px-2.5 py-1 text-xs font-semibold text-brand-800">Default</span>
-          )}
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="title text-[2.25rem] text-fg">
+            {vehicle.make} <span className="text-fg-2">{vehicle.model}</span>
+          </h2>
+          <p className="unit mt-1">
+            {vehicle.year} · {vehicle.engine} · {vehicle.fuel_type}
+          </p>
         </div>
-        <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-          <div className="rounded-2xl bg-surface px-2 py-3">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-muted">Tank</p>
-            <p className="mt-1 text-sm font-bold text-ink">{formatLiters(vehicle.tank_capacity_liters, 0)}</p>
-          </div>
-          <div className="rounded-2xl bg-surface px-2 py-3">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-muted">Avg use</p>
-            <p className="mt-1 text-sm font-bold text-ink">{formatConsumption(vehicle.mixed_consumption)}</p>
-          </div>
-          <div className="rounded-2xl bg-surface px-2 py-3">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-muted">Fuel</p>
-            <p className="mt-1 text-sm font-bold capitalize text-ink">{vehicle.fuel_type}</p>
-          </div>
-        </div>
-        {featured && (
-          <div className="mt-5 flex flex-wrap gap-3">
-            {onCustomize && (
-              <SecondaryButton className="flex-1 py-3 text-sm" onClick={onCustomize} type="button">
-                Customize look
-              </SecondaryButton>
-            )}
-            <SecondaryButton className="flex-1 py-3 text-sm" onClick={onEdit} type="button">
-              Edit details
-            </SecondaryButton>
-            {!vehicle.is_default && (
-              <PrimaryButton className="flex-1 py-3 text-sm" onClick={onSetDefault} type="button">
-                Set as Default
-              </PrimaryButton>
-            )}
-          </div>
+        {vehicle.is_default && (
+          <span className="flex items-center gap-2 text-xs font-semibold text-fg-2">
+            <span className="lamp text-ok" aria-hidden /> Default
+          </span>
         )}
       </div>
-    </div>
-  )
-}
 
-export function VehicleSelectorChip({
-  vehicle,
-  onClick,
-}: {
-  vehicle: Vehicle
-  onClick?: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="card-surface card-interactive flex w-full items-center gap-3 p-2 text-left"
-    >
-      <VehicleThumb vehicle={vehicle} />
-      <div className="min-w-0 text-left">
-        <p className="font-semibold text-ink">{vehicle.make} {vehicle.model}</p>
-        <p className="text-xs text-muted">{vehicle.year} • {vehicle.engine} • {vehicle.fuel_type}</p>
-      </div>
-    </button>
+      <dl className="mt-5 grid grid-cols-3 divide-x divide-line border-y border-line">
+        {[
+          ['tank', vehicle.tank_capacity_liters.toFixed(0), 'L'],
+          ['mixed', vehicle.mixed_consumption.toFixed(1), 'L/100km'],
+          ['gauge', String(vehicle.fuel_gauge_bars), 'bars'],
+        ].map(([k, v, u]) => (
+          <div key={k} className="px-3 py-3.5 first:pl-0">
+            <dt className="unit">{k}</dt>
+            <dd className="readout mt-2 text-2xl text-fg">
+              {v}
+              <span className="unit ml-1">{u}</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      {featured && (
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          {onCustomize && (
+            <button className="btn btn-ghost btn-sm" onClick={onCustomize} type="button">
+              Paint &amp; body
+            </button>
+          )}
+          <button className="btn btn-ghost btn-sm" onClick={onEdit} type="button">
+            Edit details
+          </button>
+          {!vehicle.is_default && (
+            <button className="btn btn-primary btn-sm col-span-2" onClick={onSetDefault} type="button">
+              Make default
+            </button>
+          )}
+        </div>
+      )}
+    </article>
   )
 }
 
 /** Flat silhouette thumbnail — list rows must not each open a WebGL context. */
 function VehicleThumb({ vehicle }: { vehicle: Vehicle }) {
   return (
-    <span className="flex h-[60px] w-[88px] shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-slate-100 to-white px-1.5">
-      <VehicleSilhouette
-        bodyType={resolveBodyType(vehicle)}
-        paint={resolvePaint(vehicle.make, vehicle.paint_color)}
-        className="w-full text-slate-900"
-      />
+    <span className="flex h-12 w-20 shrink-0 items-center">
+      <VehicleSilhouette bodyType={resolveBodyType(vehicle)} paint={resolvePaint(vehicle.make, vehicle.paint_color)} className="w-full text-fg" />
     </span>
   )
 }

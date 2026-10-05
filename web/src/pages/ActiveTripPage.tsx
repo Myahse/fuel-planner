@@ -1,65 +1,86 @@
 import { useNavigate } from 'react-router-dom'
+import { LocateFixed, ZoomIn } from 'lucide-react'
 import { MapView } from '../components/map/MapView'
 import { PLACES, resolvePlace } from '../data/mapPlaces'
 import { interpolateRoute } from '../components/map/routeGeometry'
 import { useTripStore } from '../store/tripStore'
-import { Mic, Settings, ZoomIn, LocateFixed } from 'lucide-react'
-import { fuelLevelStatus } from '../lib/fuelStatus'
-import { formatKm, formatLiters } from '../lib/format'
+import { FuelSegments } from '../components/FuelSegments'
+
+/** Bottom heads-up strip shared by the driving screens: three readings and an End button. */
+export function DriveHud({ cells, onEnd, children }: { cells: [string, string, string][]; onEnd: () => void; children?: React.ReactNode }) {
+  return (
+    <div className="border-t border-line bg-panel px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4">
+      {children}
+      <div className="flex items-end gap-4">
+        <dl className="grid flex-1 grid-cols-3 divide-x divide-line">
+          {cells.map(([k, v, u]) => (
+            <div key={k} className="px-3 first:pl-0">
+              <dt className="unit">{k}</dt>
+              <dd className="readout mt-1.5 text-3xl text-fg">
+                {v}
+                <span className="unit ml-1">{u}</span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <button type="button" onClick={onEnd} className="btn btn-danger btn-sm w-20">
+          End
+        </button>
+      </div>
+    </div>
+  )
+}
 
 export function ActiveTripPage() {
   const navigate = useNavigate()
   const { draft } = useTripStore()
   const origin = resolvePlace(draft.origin) ?? PLACES.abidjan
   const dest = resolvePlace(draft.destination) ?? PLACES.yamoussoukro
-  const fuel = fuelLevelStatus(25, 12.4)
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col">
-      <div className="absolute left-4 right-4 top-4 z-10 rounded-2xl bg-white/95 px-4 py-3 shadow-float">
-        <p className="font-bold text-ink">Stay on A3</p>
-        <p className="text-sm text-muted">120 km to destination</p>
+    <div className="fixed inset-0 z-40 flex flex-col bg-bg">
+      <div className="border-b border-line bg-panel px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))]">
+        <p className="title text-2xl text-fg">Stay on the A3</p>
+        <p className="unit mt-1">120 km to {draft.destination.toLowerCase()}</p>
       </div>
 
-      <MapView
-        className="flex-1"
-        zoom={9}
-        route={{ points: interpolateRoute(origin, dest) }}
-        markers={[
-          { id: 'u', lat: 5.9, lng: -4.5, variant: 'user' },
-          { id: 'd', lat: dest.lat, lng: dest.lng, variant: 'destination' },
+      <div className="relative min-h-0 flex-1">
+        <MapView
+          className="h-full"
+          zoom={9}
+          route={{ points: interpolateRoute(origin, dest) }}
+          markers={[
+            { id: 'u', lat: 5.9, lng: -4.5, variant: 'user' },
+            { id: 'd', lat: dest.lat, lng: dest.lng, variant: 'destination' },
+          ]}
+        />
+        <div className="absolute right-3 top-3 z-[500] flex flex-col gap-2">
+          {[
+            { Icon: ZoomIn, label: 'Zoom in' },
+            { Icon: LocateFixed, label: 'Recenter' },
+          ].map(({ Icon, label }) => (
+            <button key={label} type="button" className="icon-btn h-10 w-10 bg-panel" aria-label={label}>
+              <Icon className="h-4 w-4" />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <DriveHud
+        cells={[
+          ['time left', '2:15', 'h'],
+          ['distance', '147', 'km'],
+          ['range', '165', 'km'],
         ]}
-      />
-
-      <div className="absolute right-4 top-28 z-10 flex flex-col gap-2">
-        {[Mic, Settings, ZoomIn, LocateFixed].map((Icon, i) => (
-          <button key={i} type="button" className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-card">
-            <Icon className="h-4 w-4" />
-          </button>
-        ))}
-      </div>
-
-      <div className="relative z-10 m-4 space-y-3">
-        <div className="rounded-3xl bg-white p-4 shadow-float">
-          <div className="grid grid-cols-3 text-center">
-            <div><p className="text-xl font-bold">2h 15m</p><p className="text-xs text-muted">Time</p></div>
-            <div><p className="text-xl font-bold">147 km</p><p className="text-xs text-muted">Left</p></div>
-            <div><p className="text-xl font-bold">11:20 AM</p><p className="text-xs text-muted">ETA</p></div>
-          </div>
+        onEnd={() => navigate('/app/trip-summary')}
+      >
+        <div className="mb-4 flex items-center gap-4">
+          <p className="readout text-2xl text-fg">
+            12.4<span className="unit ml-1">L</span>
+          </p>
+          <FuelSegments className="flex-1" percent={25} bars={8} />
         </div>
-        <div className="rounded-3xl bg-white p-4 shadow-float">
-          <p className="text-xs font-semibold uppercase text-muted">Estimated remaining fuel</p>
-          <p className="text-2xl font-bold">{formatLiters(12.4)} <span className="text-base text-muted">25%</span></p>
-          <p className="mt-2 text-sm">{fuel.emoji} {fuel.label} • Range {formatKm(165)}</p>
-          <button
-            type="button"
-            onClick={() => navigate('/app/trip-summary')}
-            className="mt-4 w-full rounded-2xl bg-red-600 py-3 font-semibold text-white"
-          >
-            End Trip
-          </button>
-        </div>
-      </div>
+      </DriveHud>
     </div>
   )
 }

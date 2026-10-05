@@ -3,45 +3,32 @@ import { formatDuration, formatFcfa } from '../lib/format'
 
 export { formatDuration, formatFcfa }
 
-export function Card({
-  children,
-  className = '',
-  interactive,
-  featured,
-}: {
-  children: ReactNode
-  className?: string
-  interactive?: boolean
-  featured?: boolean
-}) {
-  return (
-    <div
-      className={`card-surface p-5 ${featured ? 'card-featured' : ''} ${
-        interactive ? 'card-interactive' : ''
-      } ${className}`}
-    >
-      {children}
-    </div>
-  )
-}
-
 export function InfoNote({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-brand-800/10 bg-brand-50/50 px-4 py-3 text-sm leading-relaxed text-muted">
-      {children}
-    </div>
+    <div className="border-l-2 border-signal/60 py-1 pl-4 text-sm leading-relaxed text-fg-2">{children}</div>
   )
 }
 
 export function SectionLabel({ children }: { children: ReactNode }) {
-  return <p className="eyebrow mb-2">{children}</p>
+  return <p className="field-label">{children}</p>
 }
 
-export function InputField({
-  className = '',
-  ...props
-}: InputHTMLAttributes<HTMLInputElement>) {
-  return <input className={`input-field ${className}`} {...props} />
+/** Key–value rows separated by hairlines, for receipts and summaries. */
+export function SpecList({ rows }: { rows: [ReactNode, ReactNode][] }) {
+  return (
+    <dl className="divide-y divide-line">
+      {rows.map(([k, v], i) => (
+        <div key={i} className="flex items-baseline justify-between gap-4 py-3 text-sm">
+          <dt className="text-fg-3">{k}</dt>
+          <dd className="text-right font-medium text-fg">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+export function InputField({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  return <input className={`field ${className}`} {...props} />
 }
 
 export function ToggleRow({
@@ -54,21 +41,24 @@ export function ToggleRow({
   onChange: (v: boolean) => void
 }) {
   return (
-    <label className="flex items-center justify-between gap-3 py-3">
-      <span className="text-sm font-medium text-ink">{label}</span>
+    <div className="flex items-center justify-between gap-3 py-3">
+      <span className="text-sm font-medium text-fg">{label}</span>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
-        className={`relative h-7 w-12 rounded-full transition-colors ${checked ? 'bg-brand-800' : 'bg-slate-300'}`}
+        className={`relative h-6 w-11 rounded-sm border transition-colors ${
+          checked ? 'border-signal bg-signal/20' : 'border-line-strong bg-panel-2'
+        }`}
       >
         <span
-          className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${
-            checked ? 'left-[22px]' : 'left-0.5'
+          className={`absolute top-0.5 h-[18px] w-[18px] rounded-xs transition-all ${
+            checked ? 'left-[22px] bg-signal' : 'left-0.5 bg-fg-3'
           }`}
         />
       </button>
-    </label>
+    </div>
   )
 }

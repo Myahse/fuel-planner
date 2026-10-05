@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { listTrips } from '../api/endpoints'
 import { PageHeader } from '../components/layout/PageHeader'
+import { SpecList } from '../components/ui'
 import { formatDuration, formatFcfa, formatKm, formatLiters } from '../lib/format'
 
 export function TripDetailPage() {
@@ -13,23 +14,28 @@ export function TripDetailPage() {
     return (
       <div>
         <PageHeader title="Trip" backTo="/app/history" />
-        <p className="text-muted">Trip not found.</p>
+        <p className="text-fg-2">We couldn&apos;t find that trip.</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <PageHeader title="Trip Details" backTo="/app/history" />
-      <div className="rounded-3xl bg-white p-5 shadow-card space-y-3 text-sm">
-        <p className="text-xl font-bold">{trip.origin} → {trip.destination}</p>
-        <div className="flex justify-between"><span className="text-muted">Distance</span><span>{formatKm(trip.distance_km)}</span></div>
-        <div className="flex justify-between"><span className="text-muted">Duration</span><span>{formatDuration(trip.estimated_duration_seconds)}</span></div>
-        <div className="flex justify-between"><span className="text-muted">Fuel</span><span>{formatLiters(trip.fuel_required_liters)}</span></div>
-        <div className="flex justify-between"><span className="text-muted">Cost</span><span className="font-bold text-brand-800">{formatFcfa(trip.fuel_cost)}</span></div>
-        <div className="flex justify-between"><span className="text-muted">Status</span><span className="capitalize">{trip.status}</span></div>
+    <div className="space-y-6">
+      <PageHeader title={`${trip.origin} → ${trip.destination}`} backTo="/app/history" subtitle={new Date(trip.created_at).toLocaleDateString(undefined, { dateStyle: 'long' })} />
+      <div className="border-y border-line">
+        <SpecList
+          rows={[
+            ['Distance', formatKm(trip.distance_km)],
+            ['Drive time', formatDuration(trip.estimated_duration_seconds)],
+            ['Fuel', formatLiters(trip.fuel_required_liters)],
+            ['Cost', formatFcfa(trip.fuel_cost)],
+            ['Status', <span className="capitalize">{trip.status}</span>],
+          ]}
+        />
       </div>
-      <Link to="/app/plan" className="text-brand-800 font-semibold">Plan similar trip</Link>
+      <Link to="/app/plan" className="btn btn-ghost w-full">
+        Plan a similar trip
+      </Link>
     </div>
   )
 }

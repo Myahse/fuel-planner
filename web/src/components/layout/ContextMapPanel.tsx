@@ -72,17 +72,15 @@ export function ContextMapPanel() {
 
   return (
     <aside
-      className={`hidden border-l border-slate-200/80 bg-slate-100 lg:block ${
-        hiddenOnMobile ? 'lg:hidden' : ''
-      } ${pathname.includes('/plan') || pathname.includes('/trip-result') ? 'lg:w-[min(58%,720px)]' : 'lg:w-[min(42%,520px)]'}`}
+      className={`hidden border-l border-line lg:block ${hiddenOnMobile ? 'lg:hidden' : ''} ${
+        pathname.includes('/plan') || pathname.includes('/trip-result') ? 'lg:w-[min(52%,720px)]' : 'lg:w-[min(40%,520px)]'
+      }`}
     >
-      <div className="sticky top-0 h-screen p-4 pl-2">
-        <div className="relative h-full overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-card">
-          <div className="absolute left-4 top-4 z-[500] rounded-full border border-white/80 bg-white/90 px-3 py-1.5 text-xs font-semibold text-brand-800 shadow-sm backdrop-blur">
-            Live map
-          </div>
-          <MapView className="h-full min-h-[320px]" {...mapProps} />
-        </div>
+      <div className="sticky top-0 h-screen">
+        <MapView className="h-full min-h-[320px]" {...mapProps} />
+        <p className="unit pointer-events-none absolute left-4 top-4 z-[500] rounded-xs bg-bg/80 px-2 py-1 backdrop-blur">
+          {mapProps.route ? 'route' : 'range'} · live
+        </p>
       </div>
     </aside>
   )

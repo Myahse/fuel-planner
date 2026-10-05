@@ -5,8 +5,7 @@ import { createFuelTransaction } from '../api/endpoints'
 import { useActiveVehicle } from '../hooks/useActiveVehicle'
 import { PageHeader } from '../components/layout/PageHeader'
 import { PrimaryButton } from '../components/buttons/PrimaryButton'
-import { Card } from '../components/ui'
-import { formatFcfa, formatKm, formatLiters } from '../lib/format'
+import { ProgressBar } from '../components/ProgressBar'
 import { estimatedRangeKm, litersFromPercent } from '../lib/fuelMath'
 
 type Mode = 'liters' | 'amount'
@@ -30,7 +29,7 @@ export function AddFuelPage() {
   const addedLiters = mode === 'liters' ? liters : amount / price
   const totalCost = mode === 'liters' ? liters * price : amount
   const newLiters = Math.min(tank, currentLiters + addedLiters)
-  const extraRange = estimatedRangeKm(addedLiters, consumption)
+  const extraRange = estimatedRangeKm(newLiters - currentLiters, consumption)
 
   const saveMutation = useMutation({
     mutationFn: () =>
@@ -49,99 +48,90 @@ export function AddFuelPage() {
 
   if (!vehicle) return null
 
-  return (
-    <div className="max-w-lg">
-      <PageHeader title="Add Fuel" backTo="/app" />
+  const newPct = (newLiters / tank) * 100
 
-      <div className="mb-4 flex rounded-2xl bg-slate-100 p-1">
+  return (
+    <div className="space-y-8">
+      <PageHeader title="Log a fill-up" backTo="/app" subtitle={`${vehicle.make} ${vehicle.model}`} />
+
+      <div className="seg" role="group" aria-label="Enter by">
         {(['liters', 'amount'] as Mode[]).map((m) => (
-          <button
-            key={m}
-            type="button"
-            onClick={() => setMode(m)}
-            className={`flex-1 rounded-xl py-2.5 text-sm font-semibold ${
-              mode === m ? 'bg-white text-brand-800 shadow-sm' : 'text-muted'
-            }`}
-          >
-            {m === 'liters' ? 'By Liters' : 'By Amount'}
+          <button key={m} type="button" aria-pressed={mode === m} onClick={() => setMode(m)}>
+            {m === 'liters' ? 'Litres' : 'Amount paid'}
           </button>
         ))}
       </div>
 
-      <Card className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
         {mode === 'liters' ? (
-          <>
-            <label className="block text-sm">
-              <span className="text-muted">Liters Added</span>
-              <input
-                type="number"
-                className="mt-1 w-full rounded-2xl border px-3 py-3 text-lg font-bold"
-                value={liters}
-                onChange={(e) => setLiters(Number(e.target.value))}
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="text-muted">Price per liter</span>
-              <input
-                type="number"
-                className="mt-1 w-full rounded-2xl border px-3 py-3"
-                value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
-              />
-            </label>
-          </>
+          <label className="col-span-2 block">
+            <span className="field-label">Litres added</span>
+            <span className="relative block">
+              <input type="number" inputMode="decimal" className="field h-16 pr-10 text-3xl font-semibold" value={liters} onChange={(e) => setLiters(Number(e.target.value))} />
+              <span className="unit absolute right-4 top-1/2 -translate-y-1/2">L</span>
+            </span>
+          </label>
         ) : (
-          <>
-            <label className="block text-sm">
-              <span className="text-muted">Amount</span>
-              <input
-                type="number"
-                className="mt-1 w-full rounded-2xl border px-3 py-3 text-lg font-bold"
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="text-muted">Fuel price</span>
-              <input
-                type="number"
-                className="mt-1 w-full rounded-2xl border px-3 py-3"
-                value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
-              />
-            </label>
-            <p className="text-sm text-muted">
-              ≈ {formatLiters(addedLiters)} • Additional range {formatKm(extraRange)}
-            </p>
-          </>
+          <label className="col-span-2 block">
+            <span className="field-label">Amount paid</span>
+            <span className="relative block">
+              <input type="number" inputMode="numeric" className="field h-16 pr-16 text-3xl font-semibold" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+              <span className="unit absolute right-4 top-1/2 -translate-y-1/2">FCFA</span>
+            </span>
+          </label>
         )}
+        <label className="block">
+          <span className="field-label">Price per litre</span>
+          <span className="relative block">
+            <input type="number" inputMode="numeric" className="field pr-16" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+            <span className="unit absolute right-3.5 top-1/2 -translate-y-1/2">FCFA/L</span>
+          </span>
+        </label>
+        <label className="block">
+          <span className="field-label">Date</span>
+          <input type="date" className="field" defaultValue={new Date().toISOString().slice(0, 10)} />
+        </label>
+      </div>
 
-        <div className="rounded-2xl bg-surface p-4">
-          <p className="text-sm text-muted">Total Cost</p>
-          <p className="text-2xl font-bold text-brand-800">{formatFcfa(totalCost)}</p>
-          <p className="mt-2 text-sm">
-            New tank level{' '}
-            <span className="font-semibold">{formatLiters(newLiters, 1)} / {formatLiters(tank, 0)}</span>
+      <section className="border-y border-line py-5">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="unit">{mode === 'liters' ? 'you pay' : 'you get'}</p>
+            <p className="readout mt-2 text-5xl text-fg">
+              {mode === 'liters' ? Math.round(totalCost).toLocaleString('en-US') : addedLiters.toFixed(1)}
+              <span className="unit ml-1.5">{mode === 'liters' ? 'FCFA' : 'L'}</span>
+            </p>
+          </div>
+          <div className="pb-1 text-right">
+            <p className="readout text-2xl text-fg">
+              +{Math.round(extraRange)}
+              <span className="unit ml-1">km</span>
+            </p>
+            <p className="unit mt-1">extra range</p>
+          </div>
+        </div>
+        <div className="mt-5">
+          <ProgressBar percent={newPct} />
+          <p className="unit mt-2">
+            tank after: {newLiters.toFixed(1)} / {tank.toFixed(0)} L
           </p>
         </div>
+      </section>
 
-        <label className="block text-sm">
-          <span className="text-muted">Date</span>
-          <input type="date" className="mt-1 w-full rounded-2xl border px-3 py-3" defaultValue="2026-10-03" />
+      <div className="space-y-3">
+        <label className="block">
+          <span className="field-label">Station (optional)</span>
+          <input className="field" value={station} onChange={(e) => setStation(e.target.value)} placeholder="e.g. Total — Plateau" />
         </label>
-        <label className="block text-sm">
-          <span className="text-muted">Station (optional)</span>
-          <input className="mt-1 w-full rounded-2xl border px-3 py-3" value={station} onChange={(e) => setStation(e.target.value)} />
+        <label className="block">
+          <span className="field-label">Notes (optional)</span>
+          <textarea className="field" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </label>
-        <label className="block text-sm">
-          <span className="text-muted">Notes (optional)</span>
-          <textarea className="mt-1 w-full rounded-2xl border px-3 py-3" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
-        </label>
+      </div>
 
-        <PrimaryButton fullWidth disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
-          Save
-        </PrimaryButton>
-      </Card>
+      <PrimaryButton fullWidth disabled={saveMutation.isPending || addedLiters <= 0} onClick={() => saveMutation.mutate()}>
+        {saveMutation.isPending ? 'Saving…' : 'Save fill-up'}
+      </PrimaryButton>
     </div>
   )
 }

@@ -29,3 +29,7 @@ mobile/.flutter-plugins-dependencies
 
 # Logs
 *.log
+
+# Meshy generation scratch
+web/scripts/.meshy-raw/
+web/scripts/.meshy-state.json

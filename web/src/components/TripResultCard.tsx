@@ -1,25 +1,29 @@
-import { formatDuration, formatFcfa, formatKm, formatLiters } from '../lib/format'
 import type { TripCalculateResult } from '../api/types'
 
+/** Trip readings as one instrument row: distance, time, fuel, cost. */
 export function TripResultCard({ result }: { result: TripCalculateResult }) {
+  const h = Math.floor(result.estimated_duration_seconds / 3600)
+  const m = Math.round((result.estimated_duration_seconds % 3600) / 60)
+  const cells: [string, string, string][] = [
+    ['distance', Math.round(result.distance_km).toLocaleString('en-US'), 'km'],
+    ['drive time', `${h}:${String(m).padStart(2, '0')}`, 'h'],
+    ['fuel', result.fuel_required_liters.toFixed(1), 'L'],
+    ['cost', `≈${Math.round(result.estimated_fuel_cost).toLocaleString('en-US')}`, 'FCFA'],
+  ]
   return (
-    <div className="grid grid-cols-3 gap-3">
-      <div className="rounded-2xl bg-surface px-3 py-4 text-center">
-        <p className="text-[10px] font-medium uppercase text-muted">Distance</p>
-        <p className="mt-1 text-lg font-bold text-ink">{formatKm(result.distance_km)}</p>
-      </div>
-      <div className="rounded-2xl bg-surface px-3 py-4 text-center">
-        <p className="text-[10px] font-medium uppercase text-muted">Est. time</p>
-        <p className="mt-1 text-lg font-bold text-ink">{formatDuration(result.estimated_duration_seconds)}</p>
-      </div>
-      <div className="rounded-2xl bg-surface px-3 py-4 text-center">
-        <p className="text-[10px] font-medium uppercase text-muted">Fuel needed</p>
-        <p className="mt-1 text-lg font-bold text-ink">{formatLiters(result.fuel_required_liters)}</p>
-      </div>
-      <div className="col-span-3 rounded-2xl border border-slate-100 bg-white px-4 py-4">
-        <p className="text-sm text-muted">Estimated cost</p>
-        <p className="text-2xl font-bold text-brand-800">≈ {formatFcfa(result.estimated_fuel_cost)}</p>
-      </div>
-    </div>
+    <dl className="grid grid-cols-2 border-y border-line">
+      {cells.map(([label, value, unit], i) => (
+        <div
+          key={label}
+          className={`py-4 ${i % 2 === 1 ? 'border-l border-line pl-4' : ''} ${i >= 2 ? 'border-t border-line' : ''}`}
+        >
+          <dt className="unit">{label}</dt>
+          <dd className="readout mt-2 text-3xl text-fg">
+            {value}
+            <span className="unit ml-1">{unit}</span>
+          </dd>
+        </div>
+      ))}
+    </dl>
   )
 }

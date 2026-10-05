@@ -1,23 +1,36 @@
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
 import { createVehicle } from '../api/endpoints'
 import { PageHeader } from '../components/layout/PageHeader'
 import { PrimaryButton } from '../components/buttons/PrimaryButton'
-import { Card, InputField, SectionLabel } from '../components/ui'
 import { CarViewer } from '../components/car3d/CarViewer'
 import { BodyStylePicker } from '../components/car3d/BodyStylePicker'
 import { CustomModelUrlField } from '../components/car3d/CustomModelUrlField'
 import { VehicleColorPicker } from '../components/car3d/VehicleColorPicker'
-import type { VehicleBodyType } from '../config/vehicleModels'
-import { resolvePaint } from '../config/vehicleModels'
+import { resolveBodyType, resolvePaint, type VehicleBodyType } from '../config/vehicleModels'
+
+function Field({ label, unit, className = '', children }: { label: string; unit?: string; className?: string; children: ReactNode }) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="field-label">{label}</span>
+      <span className="relative block">
+        {children}
+        {unit && <span className="unit pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2">{unit}</span>}
+      </span>
+    </label>
+  )
+}
 
 export function AddVehiclePage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const [preview, setPreview] = useState({ make: 'Toyota', model: 'Corolla' })
-  const [paint, setPaint] = useState('#f8fafc')
+  const [make, setMake] = useState('Toyota')
+  const [model, setModel] = useState('Corolla')
+  const [paint, setPaint] = useState(resolvePaint('Toyota'))
   const [bodyStyle, setBodyStyle] = useState<VehicleBodyType>('sedan')
+  const [bodyTouched, setBodyTouched] = useState(false)
+  const [fuelType, setFuelType] = useState<'petrol' | 'diesel'>('petrol')
   const [modelUrl, setModelUrl] = useState('')
 
   const createMutation = useMutation({
@@ -28,16 +41,23 @@ export function AddVehiclePage() {
     },
   })
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+  // Until the user picks a body style, guess it from the model name (Hilux → pickup, RAV4 → SUV…).
+  const updateName = (nextMake: string, nextModel: string) => {
+    if (paint === resolvePaint(make)) setPaint(resolvePaint(nextMake))
+    setMake(nextMake)
+    setModel(nextModel)
+    if (!bodyTouched) setBodyStyle(resolveBodyType({ make: nextMake, model: nextModel }))
+  }
+
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
-    const make = String(fd.get('make'))
-    await createMutation.mutateAsync({
+    createMutation.mutate({
       make,
-      model: String(fd.get('model')),
+      model,
       year: Number(fd.get('year')),
       engine: String(fd.get('engine')),
-      fuel_type: String(fd.get('fuel_type')),
+      fuel_type: fuelType,
       tank_capacity_liters: Number(fd.get('tank')),
       mixed_consumption: Number(fd.get('mixed')),
       city_consumption: Number(fd.get('city')),
@@ -50,26 +70,14 @@ export function AddVehiclePage() {
     })
   }
 
-  const previewVehicle = {
-    make: preview.make,
-    model: preview.model,
-    paint_color: paint,
-    body_style: bodyStyle,
-    model_3d_url: modelUrl.trim() || undefined,
-  }
-
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Add Vehicle"
-        backTo="/app/vehicles"
-        subtitle="Customize paint and 3D model before saving."
-      />
+    <form className="space-y-8" onSubmit={onSubmit}>
+      <PageHeader title="Add a vehicle" backTo="/app/vehicles" subtitle="Tank size and consumption drive every estimate, so take them from your manual if you can." />
 
-      <div className="card-surface overflow-hidden p-0">
+      <div className="-mx-4 border-y border-line sm:mx-0 sm:rounded-md sm:border">
         <CarViewer
-          vehicle={previewVehicle}
-          variant="hero"
+          vehicle={{ make, model, paint_color: paint, body_style: bodyStyle }}
+          variant="card"
           interactive
           autoRotate={false}
           bodyType={bodyStyle}
@@ -78,80 +86,79 @@ export function AddVehiclePage() {
         />
       </div>
 
-      <Card>
-        <VehicleColorPicker
-          value={paint}
-          onChange={(c) => setPaint(c)}
-        />
-        <div className="mt-5 space-y-5">
-          <BodyStylePicker value={bodyStyle} paint={paint} onChange={setBodyStyle} />
-          <CustomModelUrlField value={modelUrl} onChange={setModelUrl} />
+      <section className="space-y-4">
+        <h2 className="title text-xl text-fg">The car</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Make">
+            <input className="field" required value={make} onChange={(e) => updateName(e.target.value, model)} />
+          </Field>
+          <Field label="Model">
+            <input className="field" required value={model} onChange={(e) => updateName(make, e.target.value)} />
+          </Field>
+          <Field label="Year">
+            <input className="field" name="year" type="number" required defaultValue={2022} />
+          </Field>
+          <Field label="Engine">
+            <input className="field" name="engine" defaultValue="1.8L" />
+          </Field>
         </div>
-      </Card>
+        <div>
+          <span className="field-label">Fuel</span>
+          <div className="seg" role="group" aria-label="Fuel type">
+            {(['petrol', 'diesel'] as const).map((f) => (
+              <button key={f} type="button" aria-pressed={fuelType === f} onClick={() => setFuelType(f)} className="capitalize">
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      <Card>
-        <form
-          className="grid gap-4 sm:grid-cols-2"
-          onSubmit={onSubmit}
-          onChange={(e) => {
-            const t = e.target
-            if (t instanceof HTMLInputElement && t.name === 'make') {
-              setPreview((p) => ({ ...p, make: t.value }))
-              if (!paint || paint === resolvePaint(preview.make)) setPaint(resolvePaint(t.value))
-            }
-            if (t instanceof HTMLInputElement && t.name === 'model') {
-              setPreview((p) => ({ ...p, model: t.value }))
-            }
+      <section className="space-y-4">
+        <h2 className="title text-xl text-fg">Tank &amp; consumption</h2>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Tank capacity" unit="L">
+            <input className="field pr-10" name="tank" type="number" step="0.1" required defaultValue={50} />
+          </Field>
+          <Field label="Fuel right now" unit="%">
+            <input className="field pr-10" name="fuel_pct" type="number" min={0} max={100} defaultValue={60} />
+          </Field>
+          <Field label="City" unit="L/100km">
+            <input className="field pr-20" name="city" type="number" step="0.1" defaultValue={8.7} />
+          </Field>
+          <Field label="Highway" unit="L/100km">
+            <input className="field pr-20" name="highway" type="number" step="0.1" defaultValue={6.8} />
+          </Field>
+          <Field label="Mixed — used for trip estimates" unit="L/100km" className="col-span-2">
+            <input className="field pr-20" name="mixed" type="number" step="0.1" required defaultValue={7.5} />
+          </Field>
+        </div>
+      </section>
+
+      <section className="space-y-5">
+        <h2 className="title text-xl text-fg">Look</h2>
+        <BodyStylePicker
+          value={bodyStyle}
+          paint={paint}
+          onChange={(v) => {
+            setBodyTouched(true)
+            setBodyStyle(v)
           }}
-        >
-          <label className="text-sm">
-            <SectionLabel>Make</SectionLabel>
-            <InputField name="make" required defaultValue="Toyota" className="mt-1" />
-          </label>
-          <label className="text-sm">
-            <SectionLabel>Model</SectionLabel>
-            <InputField name="model" required defaultValue="Corolla" className="mt-1" />
-          </label>
-          <label className="text-sm">
-            <SectionLabel>Year</SectionLabel>
-            <InputField name="year" type="number" required defaultValue={2022} className="mt-1" />
-          </label>
-          <label className="text-sm">
-            <SectionLabel>Engine</SectionLabel>
-            <InputField name="engine" defaultValue="1.8L" className="mt-1" />
-          </label>
-          <label className="text-sm sm:col-span-2">
-            <SectionLabel>Fuel type</SectionLabel>
-            <select name="fuel_type" className="input-field mt-1" defaultValue="petrol">
-              <option value="petrol">Petrol</option>
-              <option value="diesel">Diesel</option>
-            </select>
-          </label>
-          <label className="text-sm">
-            <SectionLabel>Tank capacity (L)</SectionLabel>
-            <InputField name="tank" type="number" step="0.1" required defaultValue={50} className="mt-1" />
-          </label>
-          <label className="text-sm">
-            <SectionLabel>Initial fuel %</SectionLabel>
-            <InputField name="fuel_pct" type="number" defaultValue={60} className="mt-1" />
-          </label>
-          <label className="text-sm">
-            <SectionLabel>City consumption</SectionLabel>
-            <InputField name="city" type="number" step="0.1" defaultValue={8.7} className="mt-1" />
-          </label>
-          <label className="text-sm">
-            <SectionLabel>Highway consumption</SectionLabel>
-            <InputField name="highway" type="number" step="0.1" defaultValue={6.8} className="mt-1" />
-          </label>
-          <label className="text-sm sm:col-span-2">
-            <SectionLabel>Mixed consumption (L/100 km)</SectionLabel>
-            <InputField name="mixed" type="number" step="0.1" required defaultValue={7.5} className="mt-1" />
-          </label>
-          <PrimaryButton type="submit" fullWidth className="sm:col-span-2" disabled={createMutation.isPending}>
-            Save Vehicle
-          </PrimaryButton>
-        </form>
-      </Card>
-    </div>
+        />
+        <VehicleColorPicker value={paint} onChange={setPaint} />
+        <CustomModelUrlField value={modelUrl} onChange={setModelUrl} />
+      </section>
+
+      {createMutation.isError && (
+        <p className="flex items-center gap-2.5 text-sm text-fg-2" role="alert">
+          <span className="lamp text-danger" aria-hidden />
+          Couldn&apos;t save the vehicle. Check the fields and try again.
+        </p>
+      )}
+
+      <PrimaryButton type="submit" fullWidth disabled={createMutation.isPending}>
+        {createMutation.isPending ? 'Saving…' : 'Save vehicle'}
+      </PrimaryButton>
+    </form>
   )
 }

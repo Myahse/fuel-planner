@@ -1,76 +1,65 @@
 import { NavLink } from 'react-router-dom'
-import {
-  Home,
-  Map,
-  Fuel,
-  Car,
-  History,
-  BarChart3,
-  Settings,
-  Route,
-} from 'lucide-react'
-import { PRODUCT } from '../../config/product'
+import { Home, Map, Fuel, Car, History, BarChart3, Settings, Route } from 'lucide-react'
 import { useAppStore } from '../../store/appStore'
+import { BrandMark } from './BrandMark'
 
-const items = [
-  { to: '/app', label: 'Home', icon: Home, end: true },
-  { to: '/app/plan', label: 'Plan Trip', icon: Route },
-  { to: '/app/map', label: 'Map', icon: Map },
-  { to: '/app/stations', label: 'Fuel Stations', icon: Fuel },
-  { to: '/app/vehicles', label: 'Vehicles', icon: Car },
-  { to: '/app/history', label: 'History', icon: History },
-  { to: '/app/statistics', label: 'Statistics', icon: BarChart3 },
-  { to: '/app/settings', label: 'Settings', icon: Settings },
+const groups = [
+  [
+    { to: '/app', label: 'Home', icon: Home, end: true },
+    { to: '/app/plan', label: 'Plan a trip', icon: Route },
+    { to: '/app/map', label: 'Map', icon: Map },
+    { to: '/app/stations', label: 'Fuel stations', icon: Fuel },
+  ],
+  [
+    { to: '/app/vehicles', label: 'Vehicles', icon: Car },
+    { to: '/app/history', label: 'History', icon: History },
+    { to: '/app/statistics', label: 'Statistics', icon: BarChart3 },
+    { to: '/app/settings', label: 'Settings', icon: Settings },
+  ],
 ]
 
 export function Sidebar() {
   const displayName = useAppStore((s) => s.displayName)
 
   return (
-    <aside className="hidden lg:flex lg:w-[272px] lg:flex-col lg:border-r lg:border-slate-200/60 lg:bg-white/80 lg:px-4 lg:py-7 lg:backdrop-blur-xl">
-      <div className="flex items-center gap-3 px-2">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-800 to-brand-600 text-sm font-extrabold text-white shadow-md">
-          F
-        </div>
-        <div>
-          <p className="text-lg font-bold tracking-tight text-brand-900">{PRODUCT.name}</p>
-          <p className="text-[11px] font-medium text-muted">Fuel intelligence</p>
-        </div>
+    <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-[232px] lg:shrink-0 lg:flex-col lg:border-r lg:border-line lg:px-3 lg:py-6">
+      <div className="px-3">
+        <BrandMark />
       </div>
 
-      <nav className="mt-9 flex flex-1 flex-col gap-0.5">
-        {items.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            className={({ isActive }) =>
-              `group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold transition ${
-                isActive
-                  ? 'bg-brand-50 text-brand-800 shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-ink'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-full bg-brand-700" />
-                )}
-                <item.icon
-                  className={`h-4 w-4 ${isActive ? 'text-brand-800' : 'text-slate-400 group-hover:text-brand-700'}`}
-                  strokeWidth={2.2}
-                />
-                {item.label}
-              </>
-            )}
-          </NavLink>
+      <nav className="mt-10 flex flex-1 flex-col gap-6" aria-label="Main">
+        {groups.map((group, gi) => (
+          <ul key={gi} className="space-y-px">
+            {group.map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    `relative flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition ${
+                      isActive ? 'bg-panel-2 text-fg' : 'text-fg-3 hover:bg-panel hover:text-fg'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && <span className="absolute inset-y-1.5 left-0 w-0.5 rounded-r-sm bg-signal" />}
+                      <item.icon className="h-4 w-4" strokeWidth={isActive ? 2.25 : 1.75} />
+                      {item.label}
+                    </>
+                  )}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
         ))}
       </nav>
 
-      <div className="mt-4 rounded-2xl border border-slate-200/80 bg-surface p-3">
-        <p className="eyebrow">Signed in</p>
-        <p className="mt-1 truncate text-sm font-semibold text-ink">{displayName}</p>
+      <div className="flex items-center gap-3 border-t border-line px-3 pt-4">
+        <span className="flex h-8 w-8 items-center justify-center rounded-sm bg-panel-3 text-sm font-semibold text-fg">
+          {displayName.slice(0, 1).toUpperCase()}
+        </span>
+        <span className="min-w-0 truncate text-sm font-medium text-fg-2">{displayName}</span>
       </div>
     </aside>
   )

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ChevronLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 export function PageHeader({
@@ -14,23 +14,19 @@ export function PageHeader({
   subtitle?: string
 }) {
   return (
-    <header className="mb-6 flex items-start justify-between gap-3">
-      <div className="flex items-start gap-3">
-        {backTo && (
-          <Link
-            to={backTo}
-            className="icon-btn mt-0.5 h-10 w-10 shrink-0 text-ink"
-            aria-label="Go back"
-          >
-            <ChevronLeft className="h-5 w-5" />
+    <header className="mb-6 pt-2 lg:pt-0">
+      <div className="flex items-center justify-between gap-3">
+        {backTo ? (
+          <Link to={backTo} className="icon-btn h-10 w-10 shrink-0" aria-label="Go back">
+            <ArrowLeft className="h-4 w-4" />
           </Link>
+        ) : (
+          <span />
         )}
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-ink sm:text-[1.65rem]">{title}</h1>
-          {subtitle && <p className="mt-1.5 max-w-md text-sm leading-relaxed text-muted">{subtitle}</p>}
-        </div>
+        {right}
       </div>
-      {right}
+      <h1 className="title mt-5 text-[2rem] text-fg sm:text-[2.25rem]">{title}</h1>
+      {subtitle && <p className="mt-2 max-w-md text-sm leading-relaxed text-fg-2">{subtitle}</p>}
     </header>
   )
 }

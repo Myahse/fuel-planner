@@ -1,41 +1,46 @@
 import { Link } from 'react-router-dom'
-import { Settings, BarChart3, Car, Droplets, History, User } from 'lucide-react'
-import { PRODUCT } from '../config/product'
+import { ArrowUpRight } from 'lucide-react'
 import { useAppStore } from '../store/appStore'
+import { BrandMark } from '../components/layout/BrandMark'
+
+const links = [
+  { to: '/app/vehicles', label: 'Garage', hint: 'Your vehicles, paint and body' },
+  { to: '/app/fuel/add', label: 'Log a fill-up', hint: 'Keeps the estimate honest' },
+  { to: '/app/history', label: 'Trips', hint: 'Everything you planned' },
+  { to: '/app/statistics', label: 'Statistics', hint: 'Fuel and money over time' },
+  { to: '/app/settings', label: 'Settings', hint: 'Units, prices, region' },
+]
 
 export function MorePage() {
   const { displayName } = useAppStore()
-  const links = [
-    { to: '/app/history', label: 'Trip History', icon: History },
-    { to: '/app/statistics', label: 'Statistics', icon: BarChart3 },
-    { to: '/app/settings', label: 'Settings', icon: Settings },
-    { to: '/app/vehicles', label: 'My Vehicles', icon: Car },
-    { to: '/app/fuel/add', label: 'Add Fuel', icon: Droplets },
-  ]
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-3xl bg-brand-800 p-6 text-white">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/15">
-            <User className="h-6 w-6" />
-          </div>
-          <div>
-            <p className="text-sm opacity-80">{PRODUCT.name}</p>
-            <p className="text-xl font-bold">{displayName}</p>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-8 pt-2">
+      <header className="flex items-center justify-between">
+        <BrandMark />
+        <span className="flex items-center gap-3 text-sm text-fg-2">
+          {displayName}
+          <span className="flex h-8 w-8 items-center justify-center rounded-sm bg-panel-3 font-semibold text-fg">
+            {displayName.slice(0, 1).toUpperCase()}
+          </span>
+        </span>
+      </header>
 
-      <div className="overflow-hidden rounded-3xl bg-white shadow-card">
-        {links.map((l) => (
-          <Link key={l.to} to={l.to} className="flex items-center gap-3 border-b border-slate-100 px-4 py-4 last:border-0">
-            <l.icon className="h-5 w-5 text-brand-800" />
-            <span className="flex-1 font-semibold text-ink">{l.label}</span>
-            <span className="text-muted">→</span>
-          </Link>
-        ))}
-      </div>
+      <nav aria-label="More">
+        <ul className="-mx-4 divide-y divide-line border-y border-line sm:mx-0">
+          {links.map((l) => (
+            <li key={l.to}>
+              <Link to={l.to} className="group flex items-center gap-4 px-4 py-5">
+                <span className="min-w-0 flex-1">
+                  <span className="title block text-2xl text-fg">{l.label}</span>
+                  <span className="mt-1 block text-sm text-fg-3">{l.hint}</span>
+                </span>
+                <ArrowUpRight className="h-5 w-5 text-fg-3 transition group-hover:text-signal" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   )
 }

@@ -1,7 +1,15 @@
-# Optional GLB vehicle models
+# 3D vehicle models
 
-By default FUELGO shows a **built-in stylized 3D car** (not these files).
+`cars/` holds one model per body type (sedan, hatchback, SUV, pickup, minivan), generated with
+Meshy and optimised for the web by `npm run models:meshy` (see `scripts/meshy-generate.mjs`).
+The script registers each model in `src/config/carModels.generated.json`; body types without a
+model fall back to the built-in extruded car, so the app works before any model is generated.
 
-Use this folder only when you add **real licensed** `.glb` models and set `model_3d_url` on a vehicle (e.g. `/models/my-corolla.glb`).
+Models are generated in white paint. The viewer recolours bright, unsaturated texels at runtime,
+so one model serves every paint colour while tyres, glass and lights keep their baked look.
 
-`npm run models:download` fetches Khronos **demo** assets (toy car / truck) for testing custom URLs — they are not used unless you explicitly point a vehicle at them.
+If a generated car faces the wrong way, set `rotationY` (radians) for it in
+`src/config/carModels.generated.json`.
+
+A vehicle can still point `model_3d_url` at its own licensed `.glb`; name its body material
+"paint" (or "body") so the colour picker can recolour it.

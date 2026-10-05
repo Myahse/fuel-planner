@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Loader2, Search, SlidersHorizontal } from 'lucide-react'
+import { ArrowRight, Loader2, SlidersHorizontal } from 'lucide-react'
 import { useTripStore } from '../store/tripStore'
 import { useTripCalculation } from '../hooks/useTripCalculation'
 
@@ -21,34 +21,33 @@ export function WhereToSearch() {
 
   return (
     <div>
-      <form onSubmit={submit} className="card-surface flex items-center gap-2 p-2 pl-4" role="search">
-        <Search className="h-5 w-5 shrink-0 text-brand-800" strokeWidth={2.4} />
-        <label className="min-w-0 flex-1">
-          <span className="sr-only">Destination</span>
+      <form onSubmit={submit} role="search" className="flex items-stretch rounded-sm border border-line-strong bg-panel transition focus-within:border-signal">
+        <label className="flex min-w-0 flex-1 flex-col justify-center px-4 py-2.5">
+          <span className="unit">from {origin.toLowerCase()} to</span>
           <input
-            className="w-full border-0 bg-transparent py-2 text-base font-semibold text-ink outline-none placeholder:font-medium placeholder:text-slate-400"
+            className="w-full bg-transparent text-xl font-semibold text-fg outline-none placeholder:text-fg-3"
             placeholder="Where to?"
             value={destination}
             onChange={(e) => setDestination(e.target.value)}
             enterKeyHint="go"
+            aria-label="Destination"
           />
-          <span className="block truncate text-xs text-muted">From {origin}</span>
         </label>
-        <Link to="/app/plan" className="icon-btn h-10 w-10 shrink-0" aria-label="More trip options">
-          <SlidersHorizontal className="h-4 w-4 text-ink" />
+        <Link to="/app/plan" className="flex w-12 items-center justify-center border-l border-line text-fg-3 transition hover:text-fg" aria-label="More trip options">
+          <SlidersHorizontal className="h-4 w-4" />
         </Link>
         <button
           type="submit"
           disabled={!vehicle || !destination.trim() || isPending}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-800 text-white shadow-sm transition disabled:opacity-40"
+          className="flex w-14 items-center justify-center bg-signal text-signal-ink transition hover:bg-signal-hi disabled:bg-panel-3 disabled:text-fg-3"
           aria-label="Calculate trip"
         >
-          {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+          {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" strokeWidth={2.25} />}
         </button>
       </form>
       {isError && (
-        <p className="mt-2 px-1 text-sm font-medium text-red-700" role="alert">
-          We couldn&apos;t calculate that route. Check the destination and try again.
+        <p className="mt-2 text-sm text-danger" role="alert">
+          Couldn&apos;t calculate that route. Check the destination and try again.
         </p>
       )}
     </div>

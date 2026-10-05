@@ -64,8 +64,8 @@ export function TripResultPage() {
     return (
       <div>
         <PageHeader title="Trip Result" backTo="/app/plan" />
-        <p className="text-muted">No trip result yet.</p>
-        <Link to="/app/plan" className="mt-4 inline-block font-semibold text-brand-800">Plan a trip</Link>
+        <p className="text-fg-2">No trip calculated yet.</p>
+        <Link to="/app/plan" className="mt-4 inline-block font-semibold text-signal">Plan a trip →</Link>
       </div>
     )
   }
@@ -75,47 +75,46 @@ export function TripResultPage() {
   const needsFuel = view.assessment.status !== 'enough'
 
   return (
-    <div className="space-y-4">
-      <PageHeader title="Trip Result" backTo="/app/plan" />
+    <div className="space-y-7">
+      <PageHeader title={`${result.origin} → ${result.destination}`} backTo="/app/plan" />
+
+      {vehicles.length > 1 && vehicle && (
+        <div className="-mt-1 flex gap-5 overflow-x-auto border-b border-line" role="tablist" aria-label="Compare vehicle">
+          {vehicles.map((v) => {
+            const active = v.id === vehicle.id
+            return (
+              <button
+                key={v.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setSelectedVehicleId(v.id)}
+                className={`-mb-px flex shrink-0 items-center gap-2 border-b-2 pb-2.5 text-sm font-semibold transition ${
+                  active ? 'border-signal text-fg' : 'border-transparent text-fg-3 hover:text-fg-2'
+                }`}
+              >
+                <VehicleSilhouette bodyType={resolveBodyType(v)} paint={resolvePaint(v.make, v.paint_color)} className="h-4 w-10 text-fg" />
+                {v.model}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       <div>
-        <p className="text-lg font-bold text-ink">{result.origin} → {result.destination}</p>
-        {vehicles.length > 1 && vehicle && (
-          <div className="mt-2 flex gap-2 overflow-x-auto pb-1" role="radiogroup" aria-label="Compare vehicle">
-            {vehicles.map((v) => {
-              const active = v.id === vehicle.id
-              return (
-                <button
-                  key={v.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => setSelectedVehicleId(v.id)}
-                  className={`flex shrink-0 items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
-                    active ? 'border-brand-700 bg-brand-50 text-brand-800' : 'border-slate-200 bg-white text-slate-600'
-                  }`}
-                >
-                  <VehicleSilhouette bodyType={resolveBodyType(v)} paint={resolvePaint(v.make, v.paint_color)} className="h-5 w-12 text-slate-900" />
-                  {v.make} {v.model}
-                </button>
-              )
-            })}
-          </div>
+        <TripVerdict assessment={view.assessment} />
+        {view.preview && (
+          <p className="unit mt-3 pl-4">
+            estimate for the {vehicle?.make.toLowerCase()} {vehicle?.model.toLowerCase()} · its tank, its consumption
+          </p>
         )}
       </div>
-
-      <TripVerdict assessment={view.assessment} />
-      {view.preview && (
-        <p className="-mt-2 px-1 text-xs text-muted">
-          Preview for the {vehicle?.make} {vehicle?.model} using its tank and average consumption.
-        </p>
-      )}
 
       <FuelRouteBar distanceKm={result.distance_km} profile={view.profile} stations={MOCK_STATIONS} />
 
       <TripResultCard result={view.display} />
 
-      <div className="-mx-4 h-[30vh] min-h-[200px] overflow-hidden lg:hidden">
+      <div className="-mx-4 h-[30vh] min-h-[200px] overflow-hidden border-y border-line lg:hidden">
         <MapView
           className="h-full"
           markers={[
@@ -129,13 +128,13 @@ export function TripResultPage() {
       <div className="flex flex-col gap-3 sm:flex-row">
         {needsFuel ? (
           <>
-            <PrimaryButton fullWidth onClick={() => navigate('/app/stations')}>Find Fuel Stations</PrimaryButton>
-            <SecondaryButton fullWidth onClick={() => navigate('/app/trip-confirm')}>Start Anyway</SecondaryButton>
+            <PrimaryButton fullWidth onClick={() => navigate('/app/stations')}>Find fuel on the route</PrimaryButton>
+            <SecondaryButton fullWidth onClick={() => navigate('/app/trip-confirm')}>Start anyway</SecondaryButton>
           </>
         ) : (
           <>
-            <SecondaryButton fullWidth onClick={() => navigate('/app/stations')}>Find Fuel Stations</SecondaryButton>
-            <PrimaryButton fullWidth onClick={() => navigate('/app/trip-confirm')}>Start Navigation</PrimaryButton>
+            <PrimaryButton fullWidth onClick={() => navigate('/app/trip-confirm')}>Start the trip</PrimaryButton>
+            <SecondaryButton fullWidth onClick={() => navigate('/app/stations')}>Stations on the route</SecondaryButton>
           </>
         )}
       </div>

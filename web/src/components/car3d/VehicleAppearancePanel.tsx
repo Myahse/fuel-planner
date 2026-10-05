@@ -45,16 +45,18 @@ export function VehicleAppearancePanel({ vehicle, onSaved }: Props) {
         bodyType={bodyStyle}
         paintOverride={paint}
         modelUrlOverride={modelUrl.trim() || undefined}
-        className="!rounded-none"
+        className="border-b border-line"
       />
       <div className="space-y-5 p-5">
-        <VehicleColorPicker value={paint} onChange={setPaint} />
         <BodyStylePicker value={bodyStyle} paint={paint} onChange={setBodyStyle} />
+        <VehicleColorPicker value={paint} onChange={setPaint} />
         <CustomModelUrlField value={modelUrl} onChange={setModelUrl} />
         {saveMutation.isError && (
-          <p className="text-sm font-medium text-red-700" role="alert">Couldn&apos;t save. Try again.</p>
+          <p className="flex items-center gap-2.5 text-sm text-fg-2" role="alert">
+            <span className="lamp text-danger" aria-hidden /> Couldn&apos;t save. Try again.
+          </p>
         )}
-        <PrimaryButton fullWidth size="md" disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
+        <PrimaryButton fullWidth disabled={saveMutation.isPending} onClick={() => saveMutation.mutate()}>
           {saveMutation.isPending ? 'Saving…' : 'Save appearance'}
         </PrimaryButton>
       </div>

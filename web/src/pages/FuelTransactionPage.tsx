@@ -1,9 +1,9 @@
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { listFuelTransactions } from '../api/endpoints'
 import { useActiveVehicle } from '../hooks/useActiveVehicle'
 import { PageHeader } from '../components/layout/PageHeader'
-import { formatFcfa, formatLiters } from '../lib/format'
+import { SpecList } from '../components/ui'
 
 export function FuelTransactionPage() {
   const { id } = useParams()
@@ -17,18 +17,30 @@ export function FuelTransactionPage() {
   const tx = txQuery.data?.find((t) => t.id === id) ?? txQuery.data?.[0]
 
   return (
-    <div className="space-y-4">
-      <PageHeader title="Fuel Transaction" backTo="/app/fuel/add" />
-      {!tx && <p className="text-muted">Transaction not found.</p>}
+    <div className="space-y-6">
+      <PageHeader title="Fill-up saved" backTo="/app" />
+      {!tx && <p className="text-fg-2">We couldn&apos;t find that fill-up.</p>}
       {tx && (
-        <div className="rounded-3xl bg-white p-5 shadow-card space-y-3 text-sm">
-          <div className="flex justify-between"><span className="text-muted">Date</span><span>{new Date(tx.created_at).toLocaleString()}</span></div>
-          <div className="flex justify-between"><span className="text-muted">Liters</span><span className="font-bold">{formatLiters(tx.liters)}</span></div>
-          <div className="flex justify-between"><span className="text-muted">Price/L</span><span>{tx.price_per_liter} FCFA/L</span></div>
-          <div className="flex justify-between"><span className="text-muted">Total</span><span className="font-bold text-brand-800">{formatFcfa(tx.total_amount)}</span></div>
-          <div className="flex justify-between"><span className="text-muted">Vehicle</span><span>{vehicle ? `${vehicle.make} ${vehicle.model}` : '—'}</span></div>
-          {tx.notes && <div><span className="text-muted">Notes</span><p className="mt-1">{tx.notes}</p></div>}
-        </div>
+        <>
+          <p className="readout text-6xl text-fg">
+            {Math.round(tx.total_amount).toLocaleString('en-US')}
+            <span className="unit ml-1.5 text-sm">FCFA</span>
+          </p>
+          <div className="border-y border-line">
+            <SpecList
+              rows={[
+                ['Date', new Date(tx.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })],
+                ['Litres', `${tx.liters.toFixed(1)} L`],
+                ['Price', `${Math.round(tx.price_per_liter).toLocaleString('en-US')} FCFA/L`],
+                ['Vehicle', vehicle ? `${vehicle.make} ${vehicle.model}` : '—'],
+                ...(tx.notes ? ([['Notes', tx.notes]] as [string, string][]) : []),
+              ]}
+            />
+          </div>
+          <Link to="/app" className="btn btn-ghost w-full">
+            Back to home
+          </Link>
+        </>
       )}
     </div>
   )

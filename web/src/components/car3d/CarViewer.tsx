@@ -1,16 +1,15 @@
-import { lazy, Suspense, useMemo } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { Vehicle } from '../../api/types'
 import { getVehicleModelConfig, type VehicleBodyType } from '../../config/vehicleModels'
 
 const CarSceneCanvas = lazy(() => import('./CarSceneCanvas'))
 
-export type CarViewerVariant = 'hero' | 'banner' | 'card' | 'thumb'
+export type CarViewerVariant = 'hero' | 'banner' | 'card'
 
 const HEIGHT: Record<CarViewerVariant, string> = {
-  hero: 'min-h-[260px] h-[min(42vh,320px)]',
-  banner: 'h-[190px] sm:h-[220px]',
-  card: 'h-[220px]',
-  thumb: 'h-[72px] w-[96px]',
+  hero: 'h-[min(46vh,360px)] min-h-[240px]',
+  banner: 'h-[200px] sm:h-[240px]',
+  card: 'h-[240px]',
 }
 
 type VehicleLike = Pick<Vehicle, 'make' | 'model' | 'paint_color' | 'model_3d_url' | 'body_style'>
@@ -26,6 +25,32 @@ type Props = {
   className?: string
 }
 
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false)
+  useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+    if (!mq) return
+    const on = () => setReduced(mq.matches)
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  return reduced
+}
+
+/** Renders only while on screen, so a scrolled-away car stops costing battery. */
+function useOnScreen<T extends Element>() {
+  const ref = useRef<T>(null)
+  const [visible, setVisible] = useState(true)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setVisible(e.isIntersecting), { rootMargin: '64px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  return [ref, visible] as const
+}
+
 export function CarViewer({
   vehicle,
   variant = 'card',
@@ -37,37 +62,26 @@ export function CarViewer({
   className = '',
 }: Props) {
   const config = useMemo(
-    () =>
-      getVehicleModelConfig(vehicle, {
-        bodyType,
-        paint: paintOverride,
-        modelUrl: modelUrlOverride,
-      }),
+    () => getVehicleModelConfig(vehicle, { bodyType, paint: paintOverride, modelUrl: modelUrlOverride }),
     [vehicle, bodyType, paintOverride, modelUrlOverride],
   )
-
-  const isThumb = variant === 'thumb'
+  const reducedMotion = usePrefersReducedMotion()
+  const [ref, visible] = useOnScreen<HTMLDivElement>()
 
   return (
-    <div
-      className={`relative overflow-hidden ${isThumb ? 'rounded-xl' : 'rounded-t-3xl'} bg-gradient-to-b from-slate-100 via-white to-brand-50/40 ${HEIGHT[variant]} ${className}`}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_120%,rgba(34,197,94,0.12),transparent_55%)]" />
-      {!isThumb && variant !== 'banner' && (
-        <div className="absolute left-4 top-4 z-10 rounded-full border border-white/70 bg-white/85 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-800 shadow-sm backdrop-blur">
-          3D preview
-        </div>
-      )}
-      <div
-        className={`absolute inset-0 ${interactive ? 'pointer-events-auto' : 'pointer-events-none'}`}
-        style={{ minHeight: isThumb ? 72 : 180 }}
-      >
-        <Suspense fallback={<CarViewerFallback variant={variant} />}>
+    <div ref={ref} className={`relative overflow-hidden ${HEIGHT[variant]} ${className}`}>
+      {/* Floor: engineering grid fading into a pool of light under the car */}
+      <div className="grid-bg pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_70%_60%_at_50%_70%,black,transparent)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 bg-[radial-gradient(ellipse_50%_45%_at_50%_75%,rgb(255_255_255/0.07),transparent)]" />
+      <div className={`absolute inset-0 ${interactive ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}>
+        <Suspense fallback={<CarViewerFallback />}>
           <CarSceneCanvas
-            key={`${config.useGltf ? config.glbUrl : 'procedural'}-${config.paint}-${config.bodyType}`}
+            key={`${config.glbUrl ?? 'procedural'}-${config.bodyType}`}
             config={config}
-            autoRotate={autoRotate && !interactive}
+            autoRotate={autoRotate && !interactive && !reducedMotion}
             interactive={interactive}
+            active={visible}
+            framing={variant === 'banner' ? 'tight' : 'wide'}
           />
         </Suspense>
       </div>
@@ -75,11 +89,10 @@ export function CarViewer({
   )
 }
 
-function CarViewerFallback({ variant }: { variant: CarViewerVariant }) {
+function CarViewerFallback() {
   return (
-    <div className="flex h-full min-h-[inherit] items-center justify-center bg-slate-50">
-      <div className="h-10 w-10 animate-spin rounded-full border-2 border-brand-200 border-t-brand-700" />
-      {variant !== 'thumb' && <span className="sr-only">Loading 3D vehicle</span>}
+    <div className="flex h-full items-center justify-center">
+      <span className="unit animate-pulse">loading model…</span>
     </div>
   )
 }

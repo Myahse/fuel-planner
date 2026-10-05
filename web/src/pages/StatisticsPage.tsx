@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { PageHeader } from '../components/layout/PageHeader'
-import { StatCard } from '../components/StatCard'
 import { FuelBarChart, FuelLineChart } from '../components/FuelChart'
-import { formatConsumption, formatFcfa, formatKm, formatLiters } from '../lib/format'
 
 const daily = [
   { label: '1', value: 2.1 },
@@ -15,37 +13,51 @@ const daily = [
 ]
 
 const costTrend = daily.map((d, i) => ({ label: d.label, value: d.value * 875 + i * 200 }))
+const consumption = [7.6, 8.1, 7.9, 8.4, 7.7, 8.0, 7.8].map((value, i) => ({ label: daily[i].label, value }))
 
-type Period = 'week' | 'month' | 'year' | 'custom'
+type Period = 'week' | 'month' | 'year'
 
 export function StatisticsPage() {
   const [period, setPeriod] = useState<Period>('month')
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <PageHeader title="Statistics" backTo="/app" />
 
-      <select
-        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold"
-        value={period}
-        onChange={(e) => setPeriod(e.target.value as Period)}
-      >
-        <option value="week">This Week</option>
-        <option value="month">This Month</option>
-        <option value="year">This Year</option>
-        <option value="custom">Custom</option>
-      </select>
-
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Total Distance" value={formatKm(1240)} />
-        <StatCard label="Fuel Used" value={formatLiters(98.5)} />
-        <StatCard label="Fuel Cost" value={formatFcfa(86190)} />
-        <StatCard label="Avg Consumption" value={formatConsumption(7.9)} />
+      <div className="seg" role="group" aria-label="Period">
+        {(['week', 'month', 'year'] as Period[]).map((p) => (
+          <button key={p} type="button" aria-pressed={period === p} onClick={() => setPeriod(p)} className="capitalize">
+            {p}
+          </button>
+        ))}
       </div>
 
-      <FuelBarChart data={daily} title="Daily Fuel Usage (L)" />
-      <FuelLineChart data={costTrend} title="Fuel Cost" />
-      <FuelLineChart data={daily.map((d) => ({ ...d, value: d.value * 1.05 }))} title="Consumption over time" />
+      <dl className="grid grid-cols-2 border-y border-line">
+        {[
+          ['distance', '1,240', 'km'],
+          ['fuel used', '98.5', 'L'],
+          ['spent', '86,190', 'FCFA'],
+          ['average', '7.9', 'L/100km'],
+        ].map(([k, v, u], i) => (
+          <div key={k} className={`py-4 ${i % 2 ? 'border-l border-line pl-4' : ''} ${i > 1 ? 'border-t border-line' : ''}`}>
+            <dt className="unit">{k}</dt>
+            <dd className="readout mt-2 text-4xl text-fg">
+              {v}
+              <span className="unit ml-1">{u}</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      <FuelBarChart data={daily} title="Fuel used per day" subtitle="litres" format={(v) => `${v.toFixed(1)} L`} />
+      <FuelLineChart
+        data={costTrend}
+        title="Fuel spend"
+        subtitle="FCFA per day"
+        format={(v) => `${Math.round(v).toLocaleString('en-US')}`}
+      />
+      <FuelLineChart data={consumption} title="Consumption" subtitle="L/100 km" format={(v) => v.toFixed(1)} />
+      <p className="unit">sample data — your own numbers appear as you log trips and fill-ups</p>
     </div>
   )
 }

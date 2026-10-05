@@ -8,7 +8,7 @@ type Props = {
   children: ReactNode
 }
 
-/** Bottom sheet on phones, centred dialog on larger screens. Native <dialog> handles focus and Esc. */
+/** Bottom sheet on phones, side panel on larger screens. Native <dialog> handles focus and Esc. */
 export function Sheet({ open, onClose, title, children }: Props) {
   const ref = useRef<HTMLDialogElement>(null)
 
@@ -25,11 +25,11 @@ export function Sheet({ open, onClose, title, children }: Props) {
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
       aria-label={title}
-      className="m-0 mt-auto max-h-[92vh] w-full max-w-none overflow-hidden rounded-t-3xl bg-white p-0 shadow-float backdrop:bg-slate-900/40 backdrop:backdrop-blur-sm sm:m-auto sm:max-w-lg sm:rounded-3xl"
+      className="m-0 mt-auto max-h-[94vh] w-full max-w-none overflow-hidden rounded-t-md border-t border-line-strong bg-bg p-0 text-fg sm:my-0 sm:ml-auto sm:mr-0 sm:h-full sm:max-h-none sm:w-[440px] sm:rounded-none sm:border-l sm:border-t-0"
     >
-      <div className="flex max-h-[92vh] flex-col">
-        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-          <h2 className="text-base font-bold text-ink">{title}</h2>
+      <div className="flex max-h-[94vh] flex-col sm:h-full sm:max-h-none">
+        <div className="flex items-center justify-between border-b border-line px-5 py-3">
+          <h2 className="title text-xl">{title}</h2>
           <button type="button" onClick={onClose} className="icon-btn h-9 w-9" aria-label="Close">
             <X className="h-4 w-4" />
           </button>

@@ -13,7 +13,7 @@ export type Vehicle = {
   is_default: boolean
   paint_color?: string | null
   model_3d_url?: string | null
-  body_style?: 'sedan' | 'suv' | 'hatchback' | null
+  body_style?: 'sedan' | 'hatchback' | 'suv' | 'pickup' | 'minivan' | null
   fuel_percentage?: number
   estimated_fuel_liters?: number
 }

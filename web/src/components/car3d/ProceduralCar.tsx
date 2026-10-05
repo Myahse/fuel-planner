@@ -1,8 +1,9 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { RoundedBox } from '@react-three/drei'
-import type { Group } from 'three'
+import { DoubleSide, ExtrudeGeometry, Shape, Vector2, type BufferGeometry, type Group } from 'three'
+import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js'
 import type { VehicleBodyType } from '../../config/vehicleModels'
+import { CAR_PROFILES, GROUND_Y } from './carProfiles'
 
 type Props = {
   bodyType: VehicleBodyType
@@ -10,82 +11,100 @@ type Props = {
   autoRotate?: boolean
 }
 
-const glass = { color: '#0f172a', metalness: 0.9, roughness: 0.05, transparent: true, opacity: 0.55 }
-const trim = { color: '#111827', metalness: 0.4, roughness: 0.5 }
-const tire = { color: '#1f2937', metalness: 0.15, roughness: 0.9 }
-const rim = { color: '#d1d5db', metalness: 0.85, roughness: 0.25 }
+/** Profile units → metres: the 112-unit sedan becomes a ~4.5 m car. */
+const S = 0.04
+const WIDTH: Record<VehicleBodyType, number> = { sedan: 1.76, hatchback: 1.7, suv: 1.86, pickup: 1.86, minivan: 1.9 }
+const BEVEL = 0.07
 
-function Wheel({ x, z }: { x: number; z: number }) {
-  return (
-    <group position={[x, 0.28, z]}>
-      <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
-        <cylinderGeometry args={[0.36, 0.36, 0.26, 24]} />
-        <meshStandardMaterial {...tire} />
-      </mesh>
-      <mesh rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.22, 0.22, 0.28, 16]} />
-        <meshStandardMaterial {...rim} />
-      </mesh>
-    </group>
+function shapesFromPath(d: string): Shape[] {
+  const parsed = new SVGLoader().parse(`<svg xmlns="http://www.w3.org/2000/svg"><path d="${d}"/></svg>`)
+  return parsed.paths.flatMap((p) =>
+    SVGLoader.createShapes(p).map((shape) => {
+      // Flip into a y-up, metre-scaled shape so extrusion winding and normals stay correct.
+      const pts = shape.getPoints(10).map((v) => new Vector2(v.x * S, (GROUND_Y - v.y) * S))
+      return new Shape(pts)
+    }),
   )
 }
 
-/** Premium stylized car — default viewer (no placeholder GLB toys) */
+function extrude(shapes: Shape[], depth: number, bevel: boolean): BufferGeometry {
+  const geo = new ExtrudeGeometry(shapes, {
+    depth,
+    bevelEnabled: bevel,
+    bevelSize: BEVEL,
+    bevelThickness: BEVEL,
+    bevelSegments: 4,
+    curveSegments: 10,
+  })
+  geo.translate(0, 0, -depth / 2)
+  geo.computeVertexNormals()
+  return geo
+}
+
+/** Stylised fallback car, extruded from the same profile as the 2D silhouette. Used until a Meshy model exists. */
 export function ProceduralCar({ bodyType, paint, autoRotate = true }: Props) {
   const group = useRef<Group>(null)
+  const profile = CAR_PROFILES[bodyType]
+  const width = WIDTH[bodyType]
 
-  const dims =
-    bodyType === 'suv'
-      ? { length: 4.6, width: 1.85, bodyH: 0.72, cabinL: 2.2, cabinH: 0.62, wheelZ: 1.45 }
-      : bodyType === 'hatchback'
-        ? { length: 3.9, width: 1.65, bodyH: 0.58, cabinL: 1.85, cabinH: 0.52, wheelZ: 1.2 }
-        : { length: 4.35, width: 1.72, bodyH: 0.55, cabinL: 2.05, cabinH: 0.5, wheelZ: 1.35 }
+  const { body, glass, centerX } = useMemo(() => {
+    const core = width - BEVEL * 2
+    const body = extrude(shapesFromPath(profile.body), core, true)
+    const glass = extrude(shapesFromPath(profile.glass), width + 0.004, false)
+    body.computeBoundingBox()
+    const bb = body.boundingBox!
+    return { body, glass, centerX: (bb.min.x + bb.max.x) / 2 }
+  }, [profile, width])
 
   useFrame((_, delta) => {
-    if (autoRotate && group.current) group.current.rotation.y += delta * 0.42
+    if (autoRotate && group.current) group.current.rotation.y += delta * 0.35
   })
 
-  const paintMat = { color: paint, metalness: 0.72, roughness: 0.22 }
+  const tireR = profile.r * S
+  const wheelZ = width / 2 - 0.08
 
   return (
-    <group ref={group} position={[0, -0.05, 0]}>
-      <RoundedBox args={[dims.width, dims.bodyH, dims.length]} radius={0.12} smoothness={4} position={[0, dims.bodyH * 0.55, 0]} castShadow>
-        <meshStandardMaterial {...paintMat} />
-      </RoundedBox>
+    <group ref={group}>
+      {/* Rotate so the car's front (profile left) faces the default camera's right-hand side. */}
+      <group position={[0, 0, 0]} rotation={[0, Math.PI, 0]}>
+        <group position={[-centerX, 0, 0]}>
+          <mesh geometry={body} castShadow receiveShadow>
+            <meshPhysicalMaterial color={paint} metalness={0.55} roughness={0.28} clearcoat={1} clearcoatRoughness={0.08} side={DoubleSide} />
+          </mesh>
+          <mesh geometry={glass}>
+            <meshPhysicalMaterial color="#05070a" metalness={0.2} roughness={0.05} clearcoat={1} side={DoubleSide} />
+          </mesh>
 
-      <RoundedBox
-        args={[dims.width * 0.88, dims.cabinH, dims.cabinL]}
-        radius={0.14}
-        smoothness={4}
-        position={[0, dims.bodyH * 0.55 + dims.cabinH * 0.42, -0.15]}
-        castShadow
-      >
-        <meshStandardMaterial {...paintMat} />
-      </RoundedBox>
+          {profile.wheels.map((wx) =>
+            [-1, 1].map((side) => (
+              <group key={`${wx}-${side}`} position={[wx * S, tireR, side * wheelZ]}>
+                <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+                  <cylinderGeometry args={[tireR, tireR, 0.26, 40]} />
+                  <meshStandardMaterial color="#0c0d0f" roughness={0.85} />
+                </mesh>
+                <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0, side * 0.002]}>
+                  <cylinderGeometry args={[tireR * 0.62, tireR * 0.62, 0.27, 32]} />
+                  <meshStandardMaterial color="#9aa0a8" metalness={0.9} roughness={0.25} />
+                </mesh>
+              </group>
+            )),
+          )}
 
-      <RoundedBox
-        args={[dims.width * 0.76, dims.cabinH * 0.65, dims.cabinL * 0.92]}
-        radius={0.08}
-        smoothness={3}
-        position={[0, dims.bodyH * 0.55 + dims.cabinH * 0.48, -0.12]}
-      >
-        <meshStandardMaterial {...glass} />
-      </RoundedBox>
-
-      <mesh position={[0, dims.bodyH * 0.35, dims.length * 0.48]}>
-        <boxGeometry args={[dims.width * 0.7, 0.06, 0.04]} />
-        <meshStandardMaterial color="#fef08a" emissive="#fbbf24" emissiveIntensity={0.6} />
-      </mesh>
-
-      <mesh position={[0, dims.bodyH * 0.2, -dims.length * 0.48]}>
-        <boxGeometry args={[dims.width * 0.65, 0.08, 0.05]} />
-        <meshStandardMaterial {...trim} />
-      </mesh>
-
-      <Wheel x={dims.width * 0.48} z={dims.wheelZ} />
-      <Wheel x={-dims.width * 0.48} z={dims.wheelZ} />
-      <Wheel x={dims.width * 0.48} z={-dims.wheelZ} />
-      <Wheel x={-dims.width * 0.48} z={-dims.wheelZ} />
+          {/* Head- and tail-lamp strips */}
+          {[-1, 1].map((side) => (
+            <group key={side}>
+              <mesh position={[(profile.wheels[0] - profile.r * 2.3) * S, (GROUND_Y - 30) * S, side * (width / 2 - 0.28)]}>
+                <boxGeometry args={[0.06, 0.07, 0.42]} />
+                <meshStandardMaterial color="#fff6e0" emissive="#fff1cc" emissiveIntensity={2.2} />
+              </mesh>
+              <mesh position={[(profile.wheels[1] + profile.r * 2.6) * S, (GROUND_Y - 31) * S, side * (width / 2 - 0.26)]}>
+                <boxGeometry args={[0.06, 0.06, 0.4]} />
+                <meshStandardMaterial color="#ff2a1a" emissive="#ff2a1a" emissiveIntensity={1.6} />
+              </mesh>
+            </group>
+          ))}
+        </group>
+      </group>
     </group>
   )
 }

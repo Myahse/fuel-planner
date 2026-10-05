@@ -145,9 +145,9 @@ func validateVisual(paint *string, modelURL *string, bodyStyle *string) error {
 	}
 	if bodyStyle != nil && *bodyStyle != "" {
 		switch strings.ToLower(*bodyStyle) {
-		case "sedan", "suv", "hatchback":
+		case "sedan", "suv", "hatchback", "pickup", "minivan":
 		default:
-			return errString("body_style must be sedan, suv, or hatchback")
+			return errString("body_style must be sedan, suv, hatchback, pickup, or minivan")
 		}
 	}
 	return nil

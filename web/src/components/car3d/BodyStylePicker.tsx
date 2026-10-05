@@ -1,11 +1,5 @@
-import type { VehicleBodyType } from '../../config/vehicleModels'
+import { BODY_TYPES, type VehicleBodyType } from '../../config/vehicleModels'
 import { VehicleSilhouette } from './VehicleSilhouette'
-
-const OPTIONS: { value: VehicleBodyType; label: string }[] = [
-  { value: 'sedan', label: 'Sedan' },
-  { value: 'hatchback', label: 'Hatchback' },
-  { value: 'suv', label: 'SUV' },
-]
 
 type Props = {
   value: VehicleBodyType
@@ -16,26 +10,19 @@ type Props = {
 export function BodyStylePicker({ value, paint, onChange }: Props) {
   return (
     <fieldset>
-      <legend className="eyebrow mb-2">Body style</legend>
-      <div className="grid grid-cols-3 gap-2">
-        {OPTIONS.map((o) => {
+      <legend className="field-label">Body</legend>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+        {BODY_TYPES.map((o) => {
           const active = o.value === value
           return (
             <label
               key={o.value}
-              className={`flex cursor-pointer flex-col items-center gap-1 rounded-2xl border-2 p-2 text-xs font-semibold transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-300 ${
-                active ? 'border-brand-700 bg-brand-50 text-brand-800' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+              className={`flex cursor-pointer flex-col items-center gap-1.5 rounded-sm border px-2 pb-2 pt-3 text-xs font-semibold transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-signal ${
+                active ? 'border-signal bg-panel-2 text-fg' : 'border-line-strong text-fg-3 hover:border-fg-3 hover:text-fg-2'
               }`}
             >
-              <input
-                type="radio"
-                name="body-style"
-                value={o.value}
-                checked={active}
-                onChange={() => onChange(o.value)}
-                className="sr-only"
-              />
-              <VehicleSilhouette bodyType={o.value} paint={paint} className="h-10 w-full text-slate-900" />
+              <input type="radio" name="body-style" value={o.value} checked={active} onChange={() => onChange(o.value)} className="sr-only" />
+              <VehicleSilhouette bodyType={o.value} paint={active ? paint : '#3a3d42'} className="h-8 w-full text-fg" />
               {o.label}
             </label>
           )

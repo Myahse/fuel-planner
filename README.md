@@ -45,16 +45,18 @@ npm run dev
 
 ### 3D vehicle models (web)
 
-GLB files live in `web/public/models/`. Download samples (or refresh after clone):
+Car models are generated with [Meshy](https://www.meshy.ai) — one per body type — and optimised to well under 1 MB each:
 
 ```bash
 cd web
-npm run models:download
+MESHY_API_KEY=… npm run models:meshy               # all body types
+MESHY_API_KEY=… npm run models:meshy -- --only suv # one body type
+npm run models:meshy -- --dry-run                   # show prompts, no API calls
 ```
 
-Map body style and paint in `web/src/config/vehicleModels.ts`. Replace GLBs with your licensed production car assets when ready — see `web/public/models/README.md`.
-
-Per-vehicle **paint color**, **body style**, and optional **`model_3d_url`** are stored on the vehicle record (API + DB migration `002_vehicle_visual`). Edit them under **My Vehicles** or when adding a car.
+Until a model exists for a body type, the app shows a built-in extruded car. Paint colour, body style
+(sedan, hatchback, SUV, pickup, minivan) and an optional custom `model_3d_url` are stored per vehicle
+(migrations `002_vehicle_visual` and `003_more_body_styles`). See `web/public/models/README.md`.
 
 ## Default demo context
 

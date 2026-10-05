@@ -3,80 +3,65 @@ import type { FuelStatus } from '../lib/fuelStatus'
 
 type TripStatus = 'enough' | 'low' | 'insufficient'
 
-const tripMap: Record<TripStatus, { title: string; body: string; className: string; emoji: string }> = {
-  enough: {
-    emoji: '🟢',
-    title: 'This trip is possible.',
-    body: 'You should arrive with comfortable fuel remaining.',
-    className: 'border-emerald-200 bg-emerald-50 text-emerald-950',
-  },
-  low: {
-    emoji: '🟠',
-    title: "You can make it, but you'll arrive with low fuel.",
-    body: 'Consider refueling along the route.',
-    className: 'border-amber-200 bg-amber-50 text-amber-950',
-  },
-  insufficient: {
-    emoji: '🔴',
-    title: "Not enough fuel",
-    body: 'You need more fuel to complete this trip safely.',
-    className: 'border-red-200 bg-red-50 text-red-950',
-  },
-}
-
-export function TripStatusCard({ status, shortageLiters }: { status: TripStatus; shortageLiters?: number }) {
-  const m = tripMap[status]
-  return (
-    <div className={`rounded-2xl border px-4 py-4 ${m.className}`}>
-      <p className="text-lg font-semibold">{m.emoji} {m.title}</p>
-      <p className="mt-1 text-sm opacity-90">
-        {status === 'insufficient' && shortageLiters != null
-          ? `You need approximately ${shortageLiters.toFixed(1)} L more to complete this trip.`
-          : m.body}
-      </p>
-    </div>
-  )
-}
-
-export function FuelStatusCard({ status }: { status: FuelStatus }) {
-  const tone =
-    status.tone === 'success'
-      ? 'border-emerald-200 bg-emerald-50 text-emerald-950'
-      : status.tone === 'warning'
-        ? 'border-amber-200 bg-amber-50 text-amber-950'
-        : 'border-red-200 bg-red-50 text-red-950'
-  return (
-    <div className={`rounded-2xl border px-4 py-3 ${tone}`}>
-      <p className="font-semibold">{status.emoji} {status.label}</p>
-    </div>
-  )
-}
-
-const verdictTone: Record<TripStatus, string> = {
-  enough: 'border-emerald-200 bg-emerald-50 text-emerald-950',
-  low: 'border-amber-200 bg-amber-50 text-amber-950',
-  insufficient: 'border-red-200 bg-red-50 text-red-950',
+const tone: Record<TripStatus, { lamp: string; border: string; headline: string }> = {
+  enough: { lamp: 'text-ok', border: 'border-ok/40', headline: "You'll make it" },
+  low: { lamp: 'text-warn', border: 'border-warn/50', headline: "You'll make it, just" },
+  insufficient: { lamp: 'text-danger', border: 'border-danger/50', headline: "Not on this tank" },
 }
 
 /** The answer to "can I make it?", shown before any other trip detail. */
 export function TripVerdict({ assessment }: { assessment: TripAssessment }) {
   const { status } = assessment
+  const t = tone[status]
   const left = Math.max(0, assessment.remaining_fuel)
-  const headline =
-    status === 'enough' ? "You'll make it" : status === 'low' ? "You'll make it — just" : "You won't make it on this tank"
-  const detail =
-    status === 'insufficient'
-      ? `You need about ${(assessment.shortage_liters ?? -assessment.remaining_fuel).toFixed(1)} L more${
-          assessment.recommended_refuel ? ` — add ${Math.round(assessment.recommended_refuel)} L to be safe` : ''
-        }.`
-      : `About ${left.toFixed(1)} L left on arrival (~${Math.round(Math.max(0, assessment.remaining_range_km))} km to spare).`
+  const short = assessment.shortage_liters ?? -assessment.remaining_fuel
 
   return (
-    <div className={`rounded-3xl border px-5 py-4 ${verdictTone[status]}`} role="status">
-      <p className="text-xl font-bold leading-tight">
-        {tripMap[status].emoji} {headline}
+    <div className={`border-l-2 ${t.border} py-1 pl-4`} role="status">
+      <p className="flex items-center gap-3">
+        <span className={`lamp ${t.lamp}`} aria-hidden />
+        <span className="title text-[2.5rem] text-fg">{t.headline}</span>
       </p>
-      <p className="mt-1 text-sm opacity-90">{detail}</p>
+      <p className="mt-2 text-base text-fg-2">
+        {status === 'insufficient' ? (
+          <>
+            You&apos;re about <strong className="text-fg">{short.toFixed(1)} L</strong> short
+            {assessment.recommended_refuel ? (
+              <>
+                {' '}— add <strong className="text-fg">{Math.round(assessment.recommended_refuel)} L</strong> to arrive safely
+              </>
+            ) : null}
+            .
+          </>
+        ) : (
+          <>
+            You arrive with <strong className="text-fg">{left.toFixed(1)} L</strong>, about{' '}
+            {Math.round(Math.max(0, assessment.remaining_range_km))} km to spare.
+          </>
+        )}
+      </p>
     </div>
+  )
+}
+
+/** Compact version for the confirm screen. */
+export function TripStatusCard({ status, shortageLiters }: { status: TripStatus; shortageLiters?: number }) {
+  const t = tone[status]
+  return (
+    <p className="flex items-center gap-2.5 text-sm text-fg-2">
+      <span className={`lamp ${t.lamp}`} aria-hidden />
+      <span className="font-semibold text-fg">{t.headline}</span>
+      {status === 'insufficient' && shortageLiters != null && <span>· {shortageLiters.toFixed(1)} L short</span>}
+    </p>
+  )
+}
+
+export function FuelStatusCard({ status }: { status: FuelStatus }) {
+  const lamp = status.tone === 'success' ? 'text-ok' : status.tone === 'warning' ? 'text-warn' : 'text-danger'
+  return (
+    <p className="flex items-center gap-2.5 text-sm font-medium text-fg">
+      <span className={`lamp ${lamp}`} aria-hidden />
+      {status.label}
+    </p>
   )
 }

@@ -1,27 +1,37 @@
 import { useNavigate } from 'react-router-dom'
+import { ArrowUp } from 'lucide-react'
 import { MapView } from '../components/map/MapView'
 import { PLACES, resolvePlace } from '../data/mapPlaces'
 import { interpolateRoute } from '../components/map/routeGeometry'
 import { useTripStore } from '../store/tripStore'
-import { formatDuration, formatKm, formatLiters } from '../lib/format'
 import { MOCK_STATIONS } from '../data/mockStations'
+import { DriveHud } from './ActiveTripPage'
 
+/** Turn-by-turn view. Maneuver text is a placeholder until a routing provider is connected. */
 export function NavigationPage() {
   const navigate = useNavigate()
   const { draft, lastResult } = useTripStore()
   const origin = resolvePlace(draft.origin) ?? PLACES.abidjan
   const dest = resolvePlace(draft.destination) ?? PLACES.yamoussoukro
-  const result = lastResult
+  const hours = Math.floor((lastResult?.estimated_duration_seconds ?? 20400) / 3600)
+  const mins = Math.round(((lastResult?.estimated_duration_seconds ?? 20400) % 3600) / 60)
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-slate-900 lg:relative lg:min-h-[calc(100vh-4rem)] lg:rounded-3xl lg:overflow-hidden">
-      <div className="absolute left-4 right-4 top-4 z-10 rounded-2xl bg-brand-800 px-4 py-3 text-white shadow-float">
-        <p className="text-2xl font-bold">500 m</p>
-        <p className="text-sm opacity-90">Continue on A3</p>
+    <div className="fixed inset-0 z-40 flex flex-col bg-bg lg:relative lg:h-screen">
+      <div className="flex items-center gap-4 border-b border-line bg-panel px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))]">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm bg-signal text-signal-ink">
+          <ArrowUp className="h-8 w-8" strokeWidth={2.5} />
+        </span>
+        <div>
+          <p className="readout text-4xl text-fg">
+            500<span className="unit ml-1">m</span>
+          </p>
+          <p className="text-sm text-fg-2">Continue on the A3</p>
+        </div>
       </div>
 
       <MapView
-        className="flex-1 min-h-0"
+        className="min-h-0 flex-1"
         zoom={8}
         markers={[
           { id: 'o', lat: origin.lat, lng: origin.lng, variant: 'origin' },
@@ -31,33 +41,14 @@ export function NavigationPage() {
         route={{ points: interpolateRoute(origin, dest) }}
       />
 
-      <div className="relative z-10 m-4 rounded-3xl bg-white p-4 shadow-float">
-        <div className="grid grid-cols-3 gap-2 text-center">
-          <div>
-            <p className="text-xl font-bold">{result ? formatDuration(result.estimated_duration_seconds) : '5h 40m'}</p>
-            <p className="text-xs text-muted">ETA</p>
-          </div>
-          <div>
-            <p className="text-xl font-bold">{formatKm(245)}</p>
-            <p className="text-xs text-muted">Remaining</p>
-          </div>
-          <div>
-            <p className="text-xl font-bold">10:25 AM</p>
-            <p className="text-xs text-muted">Arrival</p>
-          </div>
-        </div>
-        <div className="mt-4 flex justify-between rounded-2xl bg-surface px-3 py-2 text-sm">
-          <span>{result ? formatLiters(result.fuel_required_liters) : '36.8 L'} required</span>
-          <span className="font-semibold text-amber-700">4.2 L • 8%</span>
-        </div>
-        <button
-          type="button"
-          onClick={() => navigate('/app/trip-summary')}
-          className="mt-4 w-full rounded-2xl bg-red-600 py-3 font-semibold text-white"
-        >
-          End
-        </button>
-      </div>
+      <DriveHud
+        cells={[
+          ['arrive in', `${hours}:${String(mins).padStart(2, '0')}`, 'h'],
+          ['left', '245', 'km'],
+          ['on arrival', (lastResult?.assessment.remaining_fuel ?? 4.2).toFixed(1), 'L'],
+        ]}
+        onEnd={() => navigate('/app/trip-summary')}
+      />
     </div>
   )
 }

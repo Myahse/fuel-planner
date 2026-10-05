@@ -8,7 +8,6 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { VehicleCard } from '../components/VehicleCard'
 import { VehicleAppearancePanel } from '../components/car3d/VehicleAppearancePanel'
 import { Sheet } from '../components/Sheet'
-import { SecondaryButton } from '../components/buttons/SecondaryButton'
 import { CardSkeleton } from '../components/Skeleton'
 
 export function VehiclesPage() {
@@ -28,15 +27,11 @@ export function VehiclesPage() {
   return (
     <div>
       <PageHeader
-        title="My Vehicles"
+        title="Garage"
         backTo="/app"
         right={
-          <Link
-            to="/app/vehicles/add"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-800 text-white"
-            aria-label="Add vehicle"
-          >
-            <Plus className="h-5 w-5" />
+          <Link to="/app/vehicles/add" className="btn btn-ghost btn-sm" aria-label="Add vehicle">
+            <Plus className="h-4 w-4" /> Add
           </Link>
         }
       />
@@ -52,26 +47,23 @@ export function VehiclesPage() {
             onSetDefault={() => defaultMutation.mutate(featured.id)}
             onEdit={() => navigate(`/app/vehicles/add?edit=${featured.id}`)}
           />
-          <Sheet open={customizing} onClose={() => setCustomizing(false)} title={`Customize ${featured.make} ${featured.model}`}>
+          <Sheet open={customizing} onClose={() => setCustomizing(false)} title={`${featured.make} ${featured.model}`}>
             {customizing && <VehicleAppearancePanel vehicle={featured} onSaved={() => setCustomizing(false)} />}
           </Sheet>
         </>
       )}
 
       {others.length > 0 && (
-        <div className="mt-8">
-          <h2 className="mb-3 text-sm font-semibold text-muted">Other Vehicles</h2>
-          <div className="space-y-3">
+        <section className="mt-10">
+          <h2 className="mb-2 text-sm font-semibold text-fg-2">Also in the garage</h2>
+          <div className="-mx-4 divide-y divide-line border-y border-line sm:mx-0">
             {others.map((v) => (
               <VehicleCard key={v.id} vehicle={v} compact onSelect={() => setSelectedVehicleId(v.id)} />
             ))}
           </div>
-        </div>
+        </section>
       )}
 
-      <Link to="/app/vehicles/add" className="mt-8 block">
-        <SecondaryButton fullWidth>+ Add Vehicle</SecondaryButton>
-      </Link>
     </div>
   )
 }

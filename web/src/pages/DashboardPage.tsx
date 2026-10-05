@@ -1,17 +1,15 @@
-import type { ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
-import { Droplets, Fuel, Route } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { getFuelCurrent, listFuelTransactions, listTrips } from '../api/endpoints'
 import { useActiveVehicle } from '../hooks/useActiveVehicle'
 import { CarViewer } from '../components/car3d/CarViewer'
 import { VehicleHeroCard } from '../components/VehicleHeroCard'
 import { WhereToSearch } from '../components/WhereToSearch'
+import { BrandMark } from '../components/layout/BrandMark'
 import { EmptyState } from '../components/EmptyState'
 import { CardSkeleton } from '../components/Skeleton'
 import { MOCK_STATIONS } from '../data/mockStations'
-import { formatFcfa, formatLiters } from '../lib/format'
-import { PRODUCT } from '../config/product'
 
 function greeting(hour = new Date().getHours()) {
   if (hour < 12) return 'Good morning'
@@ -43,32 +41,32 @@ export function DashboardPage() {
   const liters = fuelQuery.data?.estimated_fuel_liters ?? vehicle?.estimated_fuel_liters ?? 30
   const range = fuelQuery.data?.estimated_range_km ?? 400
   const consumption = fuelQuery.data?.consumption_l_per_100km ?? vehicle?.mixed_consumption ?? 7.5
+  const costPer100 = consumption * fuelPricePerLiter
 
   const lastFill = txQuery.data?.[0]
   const lastTrip = tripsQuery.data?.find((t) => !vehicle || t.vehicle_id === vehicle.id) ?? tripsQuery.data?.[0]
   const cheapest = [...MOCK_STATIONS].sort((a, b) => a.pricePerLiter - b.pricePerLiter)[0]
 
   return (
-    <div className="space-y-5">
-      <header className="pt-1 lg:pt-0">
-        <p className="eyebrow">{PRODUCT.name}</p>
-        <h1 className="mt-1 text-2xl font-bold tracking-tight text-ink sm:text-3xl">
-          {greeting()}, {displayName}
-        </h1>
+    <div className="space-y-8">
+      <header className="flex items-center justify-between pt-1 lg:pt-0">
+        <span className="lg:hidden">
+          <BrandMark />
+        </span>
+        <p className="text-sm text-fg-3">
+          {greeting()}, <span className="text-fg-2">{displayName}</span>
+        </p>
       </header>
 
       {vehiclesQuery.isLoading && <CardSkeleton />}
 
       {!vehiclesQuery.isLoading && !vehicle && (
         <>
-          <div className="card-surface overflow-hidden p-0">
-            <CarViewer vehicle={{ make: 'Toyota', model: 'Corolla' }} variant="hero" autoRotate />
-          </div>
+          <CarViewer vehicle={{ make: 'Toyota', model: 'Corolla' }} variant="hero" autoRotate />
           <EmptyState
-            title="Add your first vehicle"
-            description="Track fuel, range, and trip costs for your car."
-            actionLabel="Add Vehicle"
-            icon="🚗"
+            title="Add your car to start"
+            description="FUELGO needs your tank size and consumption to tell you how far you can go."
+            actionLabel="Add a vehicle"
             onAction={() => navigate('/app/vehicles/add')}
           />
         </>
@@ -91,39 +89,29 @@ export function DashboardPage() {
             />
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <Metric label="Consumption" value={consumption.toFixed(1)} unit="L/100 km" />
-            <Metric label="Fuel price" value={Math.round(fuelPricePerLiter).toLocaleString('en-US')} unit="FCFA/L" />
-          </div>
+          <dl className="grid grid-cols-3 divide-x divide-line border-y border-line">
+            <Metric label="consumption" value={consumption.toFixed(1)} unit="L/100km" />
+            <Metric label="fuel price" value={Math.round(fuelPricePerLiter).toLocaleString('en-US')} unit="FCFA/L" />
+            <Metric label="per 100 km" value={Math.round(costPer100).toLocaleString('en-US')} unit="FCFA" />
+          </dl>
 
-          <section aria-label="At a glance" className="space-y-3">
-            <h2 className="eyebrow">At a glance</h2>
-            <Insight
-              to={lastFill ? `/app/fuel/transactions/${lastFill.id}` : '/app/fuel/add'}
-              icon={<Droplets className="h-5 w-5" />}
-              title="Last fill-up"
-              detail={
-                lastFill
-                  ? `${formatLiters(lastFill.liters)} • ${formatFcfa(lastFill.total_amount)} • ${shortDate(lastFill.created_at)}`
-                  : 'No fill-ups yet — log one to sharpen estimates'
-              }
-            />
-            <Insight
-              to="/app/stations"
-              icon={<Fuel className="h-5 w-5" />}
-              title="Cheapest station nearby"
-              detail={`${cheapest.name} • ${cheapest.pricePerLiter.toLocaleString('en-US')} FCFA/L`}
-            />
-            <Insight
-              to={lastTrip ? `/app/history/${lastTrip.id}` : '/app/plan'}
-              icon={<Route className="h-5 w-5" />}
-              title={lastTrip ? 'Recent trip' : 'No trips yet'}
-              detail={
-                lastTrip
-                  ? `${lastTrip.origin} → ${lastTrip.destination} • ${Math.round(lastTrip.distance_km)} km`
-                  : 'Plan your first trip to see fuel and cost'
-              }
-            />
+          <section aria-labelledby="glance">
+            <h2 id="glance" className="mb-2 text-sm font-semibold text-fg-2">
+              Recently
+            </h2>
+            <ul className="divide-y divide-line border-y border-line">
+              <Row
+                to={lastFill ? `/app/fuel/transactions/${lastFill.id}` : '/app/fuel/add'}
+                k="Last fill-up"
+                v={lastFill ? `${lastFill.liters.toFixed(1)} L · ${shortDate(lastFill.created_at)}` : 'Log your first one'}
+              />
+              <Row to="/app/stations" k="Cheapest nearby" v={`${cheapest.brand} · ${cheapest.pricePerLiter} FCFA/L`} />
+              <Row
+                to={lastTrip ? `/app/history/${lastTrip.id}` : '/app/plan'}
+                k="Last trip"
+                v={lastTrip ? `${lastTrip.destination} · ${Math.round(lastTrip.distance_km)} km` : 'None yet'}
+              />
+            </ul>
           </section>
         </>
       )}
@@ -133,23 +121,24 @@ export function DashboardPage() {
 
 function Metric({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
-    <div className="card-surface p-4">
-      <p className="eyebrow">{label}</p>
-      <p className="mt-2 whitespace-nowrap text-xl font-bold text-ink">
-        {value} <span className="text-xs font-semibold text-muted">{unit}</span>
-      </p>
+    <div className="px-3 py-4 first:pl-0">
+      <dt className="unit">{label}</dt>
+      <dd className="readout mt-2 text-2xl text-fg">
+        {value}
+        <span className="unit ml-1">{unit}</span>
+      </dd>
     </div>
   )
 }
 
-function Insight({ to, icon, title, detail }: { to: string; icon: ReactNode; title: string; detail: string }) {
+function Row({ to, k, v }: { to: string; k: string; v: string }) {
   return (
-    <Link to={to} className="card-surface card-interactive flex items-center gap-3 p-3.5">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-800">{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-ink">{title}</span>
-        <span className="block truncate text-xs text-muted">{detail}</span>
-      </span>
-    </Link>
+    <li>
+      <Link to={to} className="group flex items-center gap-4 py-3.5">
+        <span className="w-32 shrink-0 text-sm text-fg-3">{k}</span>
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-fg">{v}</span>
+        <ArrowUpRight className="h-4 w-4 text-fg-3 transition group-hover:text-signal" />
+      </Link>
+    </li>
   )
 }
