@@ -6,6 +6,7 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { MAPBOX_TOKEN } from '../config/mapbox'
 import { useAppStore } from '../store/appStore'
 import { ToggleRow } from '../components/ui'
+import { requestLiquidMotion } from '../lib/liquidMotion'
 
 function Row({ label, value, to }: { label: string; value?: ReactNode; to?: string }) {
   const inner = (
@@ -75,6 +76,15 @@ export function SettingsPage() {
             ))}
           </div>
         </div>
+        <ToggleRow
+          label="Fuel follows phone movement"
+          checked={store.liquidMotion}
+          onChange={(on) => {
+            if (!on) return store.setLiquidMotion(false)
+            // iOS asks for motion access here, inside the tap.
+            void requestLiquidMotion().then((ok) => store.setLiquidMotion(ok, true))
+          }}
+        />
         <ToggleRow label="Notifications" checked={store.notificationsEnabled} onChange={store.setNotificationsEnabled} />
         <ToggleRow label="Offline maps" checked={store.offlineMapsEnabled} onChange={store.setOfflineMapsEnabled} />
         <Row label="Language" value={store.language} />

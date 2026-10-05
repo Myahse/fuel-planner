@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ThemeSync } from './components/ThemeSync'
+import { LiquidMotionSync } from './components/LiquidMotionSync'
 import { hasSession } from './api/client'
 import { AppShell } from './components/AppShell'
 import { AuthPage } from './pages/AuthPage'
@@ -37,6 +38,7 @@ export default function App() {
   return (
     <>
       <ThemeSync />
+      <LiquidMotionSync />
       <Routes>
       <Route path="/" element={<OnboardingPage />} />
       <Route path="/auth" element={<AuthPage />} />

@@ -14,6 +14,10 @@ type AppState = {
   notificationsEnabled: boolean
   offlineMapsEnabled: boolean
   theme: 'system' | 'light' | 'dark'
+  /** Fuel stays level and sloshes as the phone moves. */
+  liquidMotion: boolean
+  /** iOS motion permission has been asked once (it can only be asked from a tap). */
+  liquidMotionAsked: boolean
   language: string
   userLocation: StoredUserLocation | null
   setSelectedVehicleId: (id: string | null) => void
@@ -23,6 +27,7 @@ type AppState = {
   setNotificationsEnabled: (v: boolean) => void
   setOfflineMapsEnabled: (v: boolean) => void
   setTheme: (t: 'system' | 'light' | 'dark') => void
+  setLiquidMotion: (on: boolean, asked?: boolean) => void
   setUserLocation: (loc: StoredUserLocation | null) => void
 }
 
@@ -39,6 +44,8 @@ export const useAppStore = create<AppState>()(
       notificationsEnabled: true,
       offlineMapsEnabled: false,
       theme: 'system',
+      liquidMotion: true,
+      liquidMotionAsked: false,
       language: 'English',
       userLocation: null,
       setSelectedVehicleId: (id) => set({ selectedVehicleId: id }),
@@ -48,6 +55,7 @@ export const useAppStore = create<AppState>()(
       setNotificationsEnabled: (v) => set({ notificationsEnabled: v }),
       setOfflineMapsEnabled: (v) => set({ offlineMapsEnabled: v }),
       setTheme: (t) => set({ theme: t }),
+      setLiquidMotion: (on, asked) => set((st) => ({ liquidMotion: on, liquidMotionAsked: asked ?? st.liquidMotionAsked })),
       setUserLocation: (loc) => set({ userLocation: loc }),
     }),
     { name: 'fuelgo-app' },
