@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getFuelCurrent } from '../../api/endpoints'
 import { estimatedRangeKm } from '../../lib/fuelMath'
 import { useTripRoute } from '../../hooks/useTripRoute'
+import { ROAD_FACTOR } from '../../data/cities'
 
 export function ContextMapPanel() {
   const { pathname } = useLocation()
@@ -47,7 +48,7 @@ export function ContextMapPanel() {
             lat: s.lat,
             lng: s.lng,
             variant: 'station' as const,
-            label: s.name,
+            label: `${s.name} · ${s.town}`,
           }))
         : []),
     ]
@@ -58,8 +59,8 @@ export function ContextMapPanel() {
       markers,
       route: showRoute ? { points: routePoints } : undefined,
       rangeCircle:
-        pathname === '/app' || pathname === '/app/map'
-          ? { center: origin, radiusMeters: rangeKm * 1000 }
+        pathname === '/app'
+          ? { center: origin, radiusMeters: (rangeKm / ROAD_FACTOR) * 1000 }
           : undefined,
       loading: fuelQuery.isLoading && Boolean(vehicle),
     }
@@ -68,7 +69,8 @@ export function ContextMapPanel() {
   const hiddenOnMobile =
     pathname.includes('/navigation') ||
     pathname.includes('/active-trip') ||
-    pathname.includes('/fuel/level')
+    pathname.includes('/fuel/level') ||
+    pathname === '/app/map'
 
   return (
     <aside

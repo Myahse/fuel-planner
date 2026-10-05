@@ -3,7 +3,10 @@ export type MapMarker = {
   lat: number
   lng: number
   label?: string
-  variant?: 'origin' | 'destination' | 'station' | 'user'
+  /** 'city' draws a labelled pin coloured by `tone` that can be tapped. */
+  variant?: 'origin' | 'destination' | 'station' | 'user' | 'city'
+  tone?: 'ok' | 'low' | 'out'
+  selected?: boolean
 }
 
 export type MapRoute = {
@@ -19,6 +22,7 @@ export type MapViewProps = {
   className?: string
   interactive?: boolean
   loading?: boolean
+  onMarkerClick?: (id: string) => void
   /** 'navigation' tilts the camera and uses the night-driving style (Mapbox only) */
   mode?: 'default' | 'navigation'
 }

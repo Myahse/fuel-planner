@@ -132,7 +132,7 @@ export function FuelRouteBar({ distanceKm, profile, stations = [] }: Props) {
           return (
             <span
               key={s.id}
-              title={`${s.name} — km ${s.distanceKmFromStart}`}
+              title={`${s.name} · ${s.town}, km ${s.distanceKmFromStart}`}
               className={`absolute top-1.5 h-3 w-3 -translate-x-1/2 rotate-45 ${isRec ? 'bg-ok' : 'border border-fg-3 bg-bg'}`}
               style={{ left: pct(s.distanceKmFromStart, distanceKm) }}
             />
@@ -156,7 +156,7 @@ export function FuelRouteBar({ distanceKm, profile, stations = [] }: Props) {
           )}
           {recommended && (
             <>
-              Refuel at <strong className="text-fg">{recommended.name}</strong>, km {recommended.distanceKmFromStart}{' '}
+              Refuel at <strong className="text-fg">{recommended.name} · {recommended.town}</strong>, km {recommended.distanceKmFromStart}{' '}
               <span className="inline-block h-2 w-2 rotate-45 bg-ok align-middle" aria-hidden />.
             </>
           )}

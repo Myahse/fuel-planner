@@ -33,6 +33,7 @@ export default function LeafletMapView({
   className = '',
   interactive = true,
   loading,
+  onMarkerClick,
 }: MapViewProps) {
   const routePoints = useMemo(() => route?.points ?? [], [route?.points])
 
@@ -68,6 +69,15 @@ export default function LeafletMapView({
           />
         )}
         {markers.map((m) => {
+          if (m.variant === 'city') {
+            const icon = L.divIcon({
+              className: '',
+              html: `<button type="button" class="city-pin" data-tone="${m.tone ?? 'ok'}" aria-pressed="${Boolean(m.selected)}"><i></i>${m.label ?? ''}</button>`,
+              iconSize: undefined,
+              iconAnchor: [8, 12],
+            })
+            return <Marker key={m.id} position={[m.lat, m.lng]} icon={icon} eventHandlers={{ click: () => onMarkerClick?.(m.id) }} />
+          }
           const color =
             m.variant === 'origin'
               ? colors.fg

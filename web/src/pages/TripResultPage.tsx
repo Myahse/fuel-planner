@@ -9,7 +9,7 @@ import { MOCK_STATIONS } from '../data/mockStations'
 import { TripResultCard } from '../components/TripResultCard'
 import { TripVerdict } from '../components/StatusCard'
 import { FuelRouteBar } from '../components/FuelRouteBar'
-import { LiquidTank } from '../components/liquid/LiquidTank'
+import { FuelGauge } from '../components/gauge/FuelGauge'
 import { ArrowLeft } from 'lucide-react'
 import { PrimaryButton } from '../components/buttons/PrimaryButton'
 import { SecondaryButton } from '../components/buttons/SecondaryButton'
@@ -73,50 +73,95 @@ export function TripResultPage() {
 
   const origin = trip.origin
   const dest = trip.destination
-  const needsFuel = view.assessment.status !== 'enough'
+  const a = view.assessment
+  const needsFuel = a.status !== 'enough'
+  const tankL = view.profile.tankLiters
+  const reserve = RESERVE_LITERS / tankL
+  const arriveStatus = a.status === 'enough' ? 'ok' : a.status === 'low' ? 'low' : 'out'
+  const stops = MOCK_STATIONS.filter((s) => s.distanceKmFromStart > 0 && s.distanceKmFromStart < result.distance_km).sort(
+    (x, y) => x.distanceKmFromStart - y.distanceKmFromStart,
+  )
 
   return (
-    <div className="space-y-7">
-      <section aria-label="Fuel on arrival" className="relative -mx-4 -mt-4 h-[min(64svh,540px)] min-h-[440px] overflow-hidden sm:mx-0 sm:mt-0 sm:rounded-[32px] sm:border sm:border-fg/10">
-        <LiquidTank
-          level={Math.max(0, view.assessment.remaining_fuel) / view.profile.tankLiters}
-          status={view.assessment.status === 'enough' ? 'ok' : view.assessment.status === 'low' ? 'low' : 'out'}
-          reserve={RESERVE_LITERS / view.profile.tankLiters}
-          bars={vehicle?.fuel_gauge_bars ?? 8}
-          className="absolute inset-0 bg-bg"
-        />
-        <div className="relative flex h-full flex-col px-5 pb-6 pt-4">
-          <div className="flex items-center gap-3">
-            <Link to="/app/plan" className="icon-btn h-11 w-11 shrink-0" aria-label="Back to planning">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <h1 className="title min-w-0 truncate text-xl text-fg">
-              {shortPlace(result.origin)} → {shortPlace(result.destination)}
-            </h1>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <Link to="/app/plan" className="icon-btn h-11 w-11 shrink-0" aria-label="Back to planning">
+          <ArrowLeft className="h-5 w-5" />
+        </Link>
+        <h1 className="title min-w-0 truncate text-xl text-fg">
+          {shortPlace(result.origin)} → {shortPlace(result.destination)}
+        </h1>
+      </div>
 
-          {vehicles.length > 1 && vehicle && (
-            <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]" role="group" aria-label="Compare vehicle">
-              {vehicles.map((v) => (
-                <button key={v.id} type="button" className="chip" aria-pressed={v.id === vehicle.id} onClick={() => setSelectedVehicleId(v.id)}>
-                  {v.model}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-auto drop-shadow-[0_2px_14px_rgb(16_12_8/0.55)]">
-            <TripVerdict assessment={view.assessment} />
-            {view.preview && (
-              <p className="mt-3 text-xs font-semibold text-fg">
-                Estimate for the {vehicle?.make} {vehicle?.model}, using its tank and consumption.
-              </p>
-            )}
-          </div>
+      {vehicles.length > 1 && vehicle && (
+        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]" role="group" aria-label="Compare vehicle">
+          {vehicles.map((v) => (
+            <button key={v.id} type="button" className="chip" aria-pressed={v.id === vehicle.id} onClick={() => setSelectedVehicleId(v.id)}>
+              {v.model}
+            </button>
+          ))}
         </div>
-      </section>
+      )}
+
+      <div>
+        <TripVerdict assessment={a} />
+        {view.preview && (
+          <p className="mt-3 text-xs font-semibold text-fg-2">
+            Estimate for the {vehicle?.make} {vehicle?.model}, using its tank and consumption.
+          </p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {(
+          [
+            ['leave', a.starting_fuel, 'ok'],
+            ['arrive', Math.max(0, a.remaining_fuel), arriveStatus],
+          ] as const
+        ).map(([k, l, st]) => (
+          <div key={k} className="glass px-2 pb-3 pt-3">
+            <p className="unit text-center">{k}</p>
+            <FuelGauge
+              value={l / tankL}
+              status={st}
+              reserve={reserve}
+              bars={vehicle?.fuel_gauge_bars ?? 8}
+              compact
+              label={`${k === 'leave' ? 'Leaving with' : 'Arriving with'} ${l.toFixed(1)} litres`}
+              className="mx-auto max-w-[200px]"
+            >
+              <p className={`readout text-[1.5rem] ${st === 'out' ? 'text-danger' : st === 'low' ? 'text-warn' : k === 'arrive' ? 'text-ok' : 'text-fg'}`}>
+                {st === 'out' ? 'empty' : l.toFixed(1)}
+                {st !== 'out' && <span className="ml-0.5 font-[family-name:var(--font-sans)] text-sm font-bold tracking-normal">L</span>}
+              </p>
+            </FuelGauge>
+          </div>
+        ))}
+      </div>
 
       <FuelRouteBar distanceKm={result.distance_km} profile={view.profile} stations={MOCK_STATIONS} />
+
+      <section aria-label="Along the road">
+        <p className="unit mb-2">along the road</p>
+        <ol className="glass divide-y divide-line px-4">
+          {[
+            { id: 'o', name: shortPlace(result.origin), km: 0, note: `${a.starting_fuel.toFixed(1)} L` },
+            ...stops.map((st) => ({ id: st.id, name: `${st.name} · ${st.town}`, km: st.distanceKmFromStart, note: `${st.pricePerLiter} F/L`, station: true })),
+            { id: 'd', name: shortPlace(result.destination), km: Math.round(result.distance_km), note: a.status === 'insufficient' ? 'short' : `${Math.max(0, a.remaining_fuel).toFixed(1)} L` },
+          ].map((row) => (
+            <li key={row.id} className="flex items-center gap-3 py-3">
+              <span
+                className={`h-2.5 w-2.5 shrink-0 rounded-full ${'station' in row ? 'bg-signal shadow-[0_0_10px_rgb(255_162_31/0.7)]' : 'border-2 border-fg'}`}
+                aria-hidden
+              />
+              <span className="min-w-0 flex-1 truncate text-sm font-bold text-fg">{row.name}</span>
+              <span className="unit whitespace-nowrap">
+                {row.note} · km {row.km}
+              </span>
+            </li>
+          ))}
+        </ol>
+      </section>
 
       <TripResultCard result={view.display} />
 
@@ -126,6 +171,7 @@ export function TripResultPage() {
           markers={[
             { id: 'o', lat: origin.lat, lng: origin.lng, variant: 'origin' },
             { id: 'd', lat: dest.lat, lng: dest.lng, variant: 'destination' },
+            ...stops.map((st) => ({ id: st.id, lat: st.lat, lng: st.lng, variant: 'station' as const })),
           ]}
           route={{ points: trip.points }}
         />

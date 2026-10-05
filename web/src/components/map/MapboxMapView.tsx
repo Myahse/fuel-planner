@@ -14,7 +14,20 @@ const EMPTY: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: 
 const markerColor = (v: MapMarker['variant']) =>
   v === 'origin' ? colors.fg : v === 'destination' ? colors.signal : v === 'station' ? colors.ok : '#7cc4ff'
 
-function markerElement(m: MapMarker) {
+function markerElement(m: MapMarker, onClick?: (id: string) => void) {
+  if (m.variant === 'city') {
+    const el = document.createElement('button')
+    el.type = 'button'
+    el.className = 'city-pin'
+    el.dataset.tone = m.tone ?? 'ok'
+    el.setAttribute('aria-pressed', String(Boolean(m.selected)))
+    el.append(document.createElement('i'), m.label ?? '')
+    el.addEventListener('click', (e) => {
+      e.stopPropagation()
+      onClick?.(m.id)
+    })
+    return el
+  }
   const el = document.createElement('div')
   const c = markerColor(m.variant)
   el.style.cssText = `width:14px;height:14px;border-radius:999px;background:${c};border:3px solid ${colors.bg};box-shadow:0 0 14px ${c}`
@@ -69,6 +82,7 @@ export default function MapboxMapView({
   className = '',
   interactive = true,
   mode = 'default',
+  onMarkerClick,
 }: MapViewProps) {
   const container = useRef<HTMLDivElement>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
@@ -119,8 +133,21 @@ export default function MapboxMapView({
     center.lng,
     zoom,
   ])
-  const latest = useRef({ points, markers, rangeCircle, center, zoom })
-  latest.current = { points, markers, rangeCircle, center, zoom }
+  const latest = useRef({ points, markers, rangeCircle, center, zoom, onMarkerClick })
+  latest.current = { points, markers, rangeCircle, center, zoom, onMarkerClick }
+  // Pins restyle (tone, selection, label) without re-framing the camera.
+  const markerKey = JSON.stringify(markers.map((m) => [m.id, m.lat, m.lng, m.variant, m.tone, m.selected, m.label]))
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready) return
+    markerRefs.current.forEach((m) => m.remove())
+    markerRefs.current = latest.current.markers.map((m) =>
+      new mapboxgl.Marker({ element: markerElement(m, (id) => latest.current.onMarkerClick?.(id)), anchor: m.variant === 'city' ? 'left' : 'center', offset: m.variant === 'city' ? [-8, 0] : [0, 0] })
+        .setLngLat([m.lng, m.lat])
+        .addTo(map),
+    )
+  }, [ready, markerKey])
 
   // Data: route, range ring, markers, framing.
   useEffect(() => {
@@ -135,10 +162,7 @@ export default function MapboxMapView({
     )
     ;(map.getSource(RANGE) as GeoJSONSource).setData(rangeCircle ? circle(rangeCircle.center, rangeCircle.radiusMeters) : EMPTY)
 
-    markerRefs.current.forEach((m) => m.remove())
-    markerRefs.current = markers.map((m) => new mapboxgl.Marker({ element: markerElement(m) }).setLngLat([m.lng, m.lat]).addTo(map))
-
-    const framePoints = points.length > 1 ? points : markers
+    const framePoints = points.length > 1 ? points : rangeCircle ? [] : markers
     if (framePoints.length > 1) {
       const bounds = new mapboxgl.LngLatBounds()
       framePoints.forEach((p) => bounds.extend([p.lng, p.lat] as LngLatLike))

@@ -400,3 +400,70 @@
   background: rgb(16 12 8 / 0.7) !important;
   color: var(--color-fg-3) !important;
 }
+
+/* ── Clock gauge ──────────────────────────────────── */
+
+.gauge-needle {
+  transition:
+    transform 1.1s cubic-bezier(0.22, 1.25, 0.36, 1),
+    opacity 0.4s ease;
+}
+.gauge-arc {
+  transition: stroke-dasharray 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gauge-letter {
+  font: 700 14px var(--font-display);
+}
+
+/* ── City pins on the range map ───────────────────── */
+
+.city-pin {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font: 600 10px/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-fg);
+  text-shadow: 0 1px 6px rgb(16 12 8 / 0.9);
+  white-space: nowrap;
+}
+.city-pin > i {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 12px currentColor;
+  flex: none;
+}
+.city-pin[data-tone="ok"] > i { color: var(--color-fuel-1); }
+.city-pin[data-tone="low"] > i { color: var(--color-warn); }
+.city-pin[data-tone="out"] { color: var(--color-fg-3); }
+.city-pin[data-tone="out"] > i { box-shadow: none; }
+.city-pin[aria-pressed="true"] > i {
+  width: 14px;
+  height: 14px;
+  outline: 3px solid var(--color-bg);
+}
+
+/* ── Station price sign ───────────────────────────── */
+
+.price-sign {
+  flex: none;
+  min-width: 4.4rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 12px;
+  background: #0a0705;
+  border: 1px solid rgb(255 162 31 / 0.25);
+  box-shadow: inset 0 0 18px rgb(255 162 31 / 0.08);
+  color: var(--color-fuel-1);
+  text-align: center;
+  font: 800 1.45rem/1 var(--font-display);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 12px rgb(255 162 31 / 0.55);
+}
