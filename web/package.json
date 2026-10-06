@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:phone": "PHONE=1 VITE_API_URL=/api/v1 vite",
     "build": "tsc -p tsconfig.app.json && vite build",
     "preview": "vite preview",
     "models:meshy": "node scripts/meshy-generate.mjs"
@@ -35,6 +36,7 @@
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@types/three": "^0.186.0",
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-react": "^5.0.3",
     "tailwindcss": "^4.1.13",
     "typescript": "~5.9.2",

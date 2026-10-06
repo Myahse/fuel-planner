@@ -1,7 +1,6 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react'
 import { colors, fuelPalettes } from '../../design/tokens'
-import { liquidRoll, motionNeedsPermission, onLiquidImpulse, requestLiquidMotion } from '../../lib/liquidMotion'
-import { useAppStore } from '../../store/appStore'
+import { liquidAccel, liquidRoll, onLiquidImpulse } from '../../lib/liquidMotion'
 
 export type FuelStatus = 'ok' | 'low' | 'out'
 
@@ -95,7 +94,12 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
       pal = reduce ? goalPal.map((c) => [...c]) : pal.map((c, i) => mixRgb(c, goalPal[i], Math.min(1, dt * 3)))
 
       if (!reduce) {
-        tiltV += (-40 * (tilt + liquidRoll()) - 3.5 * tiltV) * dt
+        // Moving the phone sideways pushes the fuel against the trailing wall (an
+        // effective gravity tilted by atan(a / g)); up-down shakes set it sloshing.
+        const [ax, ay] = liquidAccel()
+        const target = Math.max(-0.9, Math.min(0.9, -liquidRoll() + (ax / 9.8) * 1.6))
+        tiltV += (-40 * (tilt - target) - 3.5 * tiltV) * dt
+        sloshV += ay * 40 * dt
         tilt += tiltV * dt
         sloshV += (-60 * slosh - 2.2 * sloshV) * dt
         slosh += sloshV * dt
@@ -214,14 +218,6 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
     redraw.current()
   }, [level, status, reserve, bars])
 
-  // iOS only sends motion after a tap-triggered prompt: ask once, on the first touch of a tank.
-  const setLiquidMotion = useAppStore((st) => st.setLiquidMotion)
-  const askedForMotion = useAppStore((st) => st.liquidMotionAsked)
-  const askForMotion = () => {
-    if (askedForMotion || !motionNeedsPermission()) return
-    void requestLiquidMotion().then((ok) => setLiquidMotion(ok, true))
-  }
-
   const fromPointer = (e: ReactPointerEvent<HTMLDivElement>) => {
     const r = wrap.current?.getBoundingClientRect()
     if (!r || !onLevelChange) return
@@ -232,12 +228,14 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
     <div
       ref={wrap}
       className={`overflow-hidden ${/\b(absolute|fixed|relative)\b/.test(className) ? '' : 'relative'} ${onLevelChange ? 'cursor-ns-resize touch-none' : ''} ${className}`}
-      onPointerDown={(e) => {
-        askForMotion()
-        if (!onLevelChange) return
-        e.currentTarget.setPointerCapture(e.pointerId)
-        fromPointer(e)
-      }}
+      onPointerDown={
+        onLevelChange
+          ? (e) => {
+              e.currentTarget.setPointerCapture(e.pointerId)
+              fromPointer(e)
+            }
+          : undefined
+      }
       onPointerMove={onLevelChange ? (e) => e.buttons && fromPointer(e) : undefined}
     >
       <canvas ref={canvas} aria-hidden className="absolute inset-0 h-full w-full" />

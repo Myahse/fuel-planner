@@ -6,7 +6,8 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { MAPBOX_TOKEN } from '../config/mapbox'
 import { useAppStore } from '../store/appStore'
 import { ToggleRow } from '../components/ui'
-import { requestLiquidMotion } from '../lib/liquidMotion'
+import { requestLiquidMotion, type MotionStatus } from '../lib/liquidMotion'
+import { useLiquidMotionStatus } from '../components/LiquidMotionSync'
 
 function Row({ label, value, to }: { label: string; value?: ReactNode; to?: string }) {
   const inner = (
@@ -80,11 +81,12 @@ export function SettingsPage() {
           label="Fuel follows phone movement"
           checked={store.liquidMotion}
           onChange={(on) => {
-            if (!on) return store.setLiquidMotion(false)
+            store.setLiquidMotion(on)
             // iOS asks for motion access here, inside the tap.
-            void requestLiquidMotion().then((ok) => store.setLiquidMotion(ok, true))
+            if (on) void requestLiquidMotion()
           }}
         />
+        {store.liquidMotion && <MotionStatusNote />}
         <ToggleRow label="Notifications" checked={store.notificationsEnabled} onChange={store.setNotificationsEnabled} />
         <ToggleRow label="Offline maps" checked={store.offlineMapsEnabled} onChange={store.setOfflineMapsEnabled} />
         <Row label="Language" value={store.language} />
@@ -99,5 +101,26 @@ export function SettingsPage() {
         </div>
       </Group>
     </div>
+  )
+}
+
+const MOTION_NOTES: Record<MotionStatus, string> = {
+  active: 'Motion sensors are on. Tilt or shake your phone.',
+  waiting: 'Waiting for motion sensors. Desktops have none; the fuel sloshes when you scroll.',
+  'needs-permission': 'Tap the switch off and on to allow motion on this iPhone.',
+  denied: 'Motion access was refused. Allow it in Safari settings for this site, then reload.',
+  insecure: 'Phones only share motion with secure (https) pages. Open the app over https.',
+  unsupported: 'This browser has no motion sensors.',
+  off: '',
+}
+
+function MotionStatusNote() {
+  const status = useLiquidMotionStatus()
+  const ok = status === 'active'
+  return (
+    <p className="-mt-1 flex items-start gap-2 pb-3 text-xs font-semibold text-fg-3">
+      <span className={`lamp mt-1 shrink-0 ${ok ? 'text-ok' : 'text-warn'}`} aria-hidden />
+      {MOTION_NOTES[status]}
+    </p>
   )
 }

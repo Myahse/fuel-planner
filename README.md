@@ -54,6 +54,16 @@ Use **two** Mapbox tokens (same account is fine):
 
 Without Mapbox config the app still runs on demo routes and free CARTO tiles. Restrict the **pk.** token to your dev URLs in the Mapbox dashboard. Mapbox does not provide fuel prices.
 
+### Testing on a phone
+
+The fuel tank tilts and sloshes with the phone's motion sensors, which browsers only expose to secure pages. Run the web app over HTTPS on your network:
+
+```bash
+cd web && npm run dev:phone
+```
+
+Open the **Network** `https://…:5173` address on the phone (accept the self-signed certificate warning once). API calls are proxied to the backend on `localhost:8080`, so keep it running on the same computer. On iPhone, tap anywhere once and allow motion access. If the Mapbox `pk.` token is URL-restricted, add this address to it.
+
 ### 3D vehicle models (web)
 
 Car models are generated with [Meshy](https://www.meshy.ai) — one per body type — and optimised to well under 1 MB each:
