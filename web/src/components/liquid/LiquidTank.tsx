@@ -1,6 +1,7 @@
 import { useEffect, useRef, type PointerEvent as ReactPointerEvent } from 'react'
 import { colors, fuelPalettes } from '../../design/tokens'
 import { liquidAccel, liquidRoll, onLiquidImpulse } from '../../lib/liquidMotion'
+import { LiquidSurface, SURFACE_G, SURFACE_PX_PER_METRE } from '../../lib/liquidSurface'
 
 export type FuelStatus = 'ok' | 'low' | 'out'
 
@@ -20,8 +21,6 @@ type Props = {
 }
 
 type Bubble = { x: number; y: number; r: number; v: number }
-/** A ring spreading from where the pointer touched the surface (x in px, born in s). */
-type Ripple = { x: number; amp: number; born: number }
 
 const hexToRgb = (hex: string) => {
   const n = parseInt(hex.slice(1), 16)
@@ -29,13 +28,15 @@ const hexToRgb = (hex: string) => {
 }
 const mixRgb = (a: number[], b: number[], t: number) => a.map((v, i) => Math.round(v + (b[i] - v) * t))
 const css = ([r, g, b]: number[]) => `rgb(${r},${g},${b})`
+const SHAKE = 0.45
 const PALETTES = { ok: fuelPalettes.ok.map(hexToRgb), low: fuelPalettes.low.map(hexToRgb), out: fuelPalettes.out.map(hexToRgb) }
 
 /**
- * The fuel tank seen from the side: glowing liquid with two wave layers, rising bubbles,
- * a dashed reserve line and the gauge's bar ticks. The surface stays level as the phone
- * rolls and sloshes on bumps or scrolling. Rendering pauses off-screen and holds still
- * for people who prefer reduced motion.
+ * The fuel tank seen from the side: glowing liquid, rising bubbles, a dashed reserve line
+ * and the gauge's bar ticks. The surface is a small water simulation (LiquidSurface), so
+ * tilting or moving the phone, dragging the window, scrolling or sweeping the mouse
+ * through it all make it slosh the way fuel would. Rendering pauses off-screen and
+ * holds still for people who prefer reduced motion.
  */
 export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, reserveLabel = false, onLevelChange, className = '' }: Props) {
   const wrap = useRef<HTMLDivElement>(null)
@@ -43,8 +44,8 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
   const target = useRef({ level, status, reserve, bars, reserveLabel })
   target.current = { level, status, reserve, bars, reserveLabel }
   const redraw = useRef<() => void>(() => {})
-  // Pointer stirring, read by the draw loop: a sideways shove and spreading ripples.
-  const stir = useRef({ shove: 0, ripples: [] as Ripple[], lastX: null as number | null, lastT: 0, clock: 0 })
+  const surface = useRef<LiquidSurface | null>(null)
+  const pointer = useRef({ lastX: null as number | null, lastT: 0 })
 
   useEffect(() => {
     const el = canvas.current
@@ -64,24 +65,15 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
       el.width = Math.round(w * dpr)
       el.height = Math.round(h * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      surface.current?.resize(w)
     }
+    const sim = (surface.current = new LiquidSurface(Math.max(1, el.getBoundingClientRect().width)))
     fit()
 
     let shown = target.current.level
     let pal = PALETTES[target.current.status].map((c) => [...c])
     const bubbles: Bubble[] = Array.from({ length: 28 }, () => ({ x: Math.random(), y: Math.random(), r: 1 + Math.random() * 3, v: 0.15 + Math.random() * 0.35 }))
-    // Two damped springs: the surface angle chases the phone's roll (and overshoots a
-    // little, like real fuel), and a sloshing mode that jolts set swinging.
-    let tilt = 0
-    let tiltV = 0
-    let slosh = 0
-    let sloshV = 0
-    const offImpulse = reduce
-      ? () => {}
-      : onLiquidImpulse((impulse) => {
-          sloshV += impulse * 320
-          tiltV += impulse * 1.2
-        })
+    const offImpulse = reduce ? () => {} : onLiquidImpulse((impulse) => sim.jolt(impulse * 420))
 
     let visible = true
     let raf = 0
@@ -97,61 +89,53 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
       const goalPal = PALETTES[status]
       pal = reduce ? goalPal.map((c) => [...c]) : pal.map((c, i) => mixRgb(c, goalPal[i], Math.min(1, dt * 3)))
 
-      if (!reduce) {
-        // Moving the phone sideways pushes the fuel against the trailing wall (an
-        // effective gravity tilted by atan(a / g)); up-down shakes set it sloshing.
-        const [ax, ay] = liquidAccel()
-        const target = Math.max(-0.9, Math.min(0.9, -liquidRoll() + (ax / 9.8) * 1.6))
-        tiltV += (-40 * (tilt - target) - 3.5 * tiltV) * dt
-        sloshV += ay * 40 * dt
-        tiltV += stir.current.shove
-        stir.current.shove = 0
-        tilt += tiltV * dt
-        sloshV += (-60 * slosh - 2.2 * sloshV) * dt
-        slosh += sloshV * dt
-      }
-
       ctx.clearRect(0, 0, w, h)
       const surf = h * (1 - Math.max(0.015, Math.min(1, shown)))
-      const amp = reduce ? 0 : 1
-      const slope = Math.tan(tilt)
-      // Surface height at x, before the small travelling waves.
-      stir.current.clock = t
-      const ripples = (stir.current.ripples = stir.current.ripples.filter((r) => t - r.born < 1.6))
-      const ripple = (x: number) => {
-        let y = 0
-        for (const r of ripples) {
-          const age = t - r.born
-          const spread = 90 * age
-          const fade = r.amp * Math.exp(-age * 2.4) * Math.cos(age * 11)
-          const g = (d: number) => Math.exp(-(d * d) / 900)
-          y += fade * (g(x - r.x - spread) + g(x - r.x + spread))
-        }
-        return y
-      }
-      const level = (x: number) => surf + slope * (x - w / 2) + slosh * Math.cos((Math.PI * x) / w) + ripple(x)
 
+      if (!reduce) {
+        // Gravity along a rolled phone pushes the fuel downhill; the tank's own sideways
+        // acceleration pushes it the other way (it lags behind); up-down moves change its weight.
+        // Shakes are scaled down: the phone is far smaller than the tank it stands for.
+        const [ax, ay] = liquidAccel()
+        sim.step(dt, h - surf, {
+          push: SURFACE_G * Math.sin(liquidRoll()) - ax * SURFACE_PX_PER_METRE * SHAKE,
+          heave: ay * SURFACE_PX_PER_METRE * SHAKE,
+        })
+      }
+      // Screen y of the surface at x, kept inside the tank when it sloshes hard.
+      const level = (x: number) => Math.max(0, Math.min(h, surf - sim.at(x)))
+
+      // Back layer: the far side of the fuel, a touch higher and calmer, for depth.
+      // Front layer: the simulated surface itself.
       for (let layer = 0; layer < 2; layer++) {
         ctx.beginPath()
         ctx.moveTo(0, h)
-        for (let x = 0; x <= w + 6; x += 6) {
-          const y =
-            level(x) +
-            amp * (Math.sin(x / (60 + layer * 28) + t * (1.5 - layer * 0.45)) * (7 - layer * 3) + Math.sin(x / 24 - t * 2.1) * 2.5) +
-            layer * 8
-          ctx.lineTo(x, y)
+        for (let x = 0; x <= w + 4; x += 4) {
+          const y = layer === 0 ? Math.max(0, surf - sim.at(x) * 0.75 - 7 + Math.sin(x / 70 + t * 0.6) * 1.5) : level(x)
+          ctx.lineTo(Math.min(x, w), y)
         }
         ctx.lineTo(w, h)
         ctx.closePath()
-        const g = ctx.createLinearGradient(0, surf, 0, h)
-        g.addColorStop(0, css(layer ? pal[1] : pal[0]))
-        g.addColorStop(0.45, css(pal[1]))
+        const g = ctx.createLinearGradient(0, surf - 20, 0, h)
+        g.addColorStop(0, css(layer ? pal[0] : pal[1]))
+        g.addColorStop(0.4, css(pal[1]))
         g.addColorStop(1, css(pal[2]))
-        ctx.globalAlpha = layer ? 1 : 0.55
+        ctx.globalAlpha = layer ? 1 : 0.5
         ctx.fillStyle = g
         ctx.fill()
       }
       ctx.globalAlpha = 1
+
+      // A thin bright line where light catches the surface.
+      ctx.beginPath()
+      for (let x = 0; x <= w + 4; x += 4) {
+        const px = Math.min(x, w)
+        if (x === 0) ctx.moveTo(px, level(px))
+        else ctx.lineTo(px, level(px))
+      }
+      ctx.strokeStyle = `rgba(${pal[0].join(',')},0.9)`
+      ctx.lineWidth = 1.5
+      ctx.stroke()
 
       // Light pooling just above the surface
       const lo = Math.min(level(0), level(w))
@@ -170,12 +154,14 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
             b.y = 1
             b.x = Math.random()
           }
+          // Bubbles drift with the fuel as it sloshes.
+          b.x = (((b.x + (sim.flowAt(b.x * w) * dt * 0.25) / w) % 1) + 1) % 1
           const bx = b.x * w
           const top = level(bx)
           const by = top + (h - top) * b.y
           if (by > top + 8) {
             ctx.beginPath()
-            ctx.arc(bx + Math.sin(t * 2 + b.x * 9) * 3, by, b.r, 0, Math.PI * 2)
+            ctx.arc(bx + Math.sin(t * 2 + b.y * 9) * 2, by, b.r, 0, Math.PI * 2)
             ctx.fill()
           }
         }
@@ -227,6 +213,7 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
     return () => {
       cancelAnimationFrame(raf)
       offImpulse()
+      surface.current = null
       ro.disconnect()
       io.disconnect()
     }
@@ -237,23 +224,26 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
     redraw.current()
   }, [level, status, reserve, bars])
 
-  // Moving the mouse across the fuel stirs it: the faster the sweep, the bigger the wake.
+  // The cursor moves through the fuel like a hand: it drags the liquid along and leaves a
+  // wake; a click (or tap) drops into it.
   const stirAt = (e: ReactPointerEvent<HTMLDivElement>, drop = false) => {
     const r = wrap.current?.getBoundingClientRect()
-    if (!r || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-    const st = stir.current
+    const sim = surface.current
+    if (!r || !sim || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
     const x = e.clientX - r.left
-    const now = performance.now()
-    const v = st.lastX == null ? 0 : (x - st.lastX) / Math.max(8, now - st.lastT) // px/ms
-    st.lastX = x
-    st.lastT = now
-    // A hand dragged through liquid pushes it along: the side it moves towards rises.
-    st.shove -= Math.max(-0.5, Math.min(0.5, v * 0.25))
-    const last = st.ripples[st.ripples.length - 1]
-    if (drop || ((!last || st.clock - last.born > 0.12) && Math.abs(v) > 0.25)) {
-      st.ripples.push({ x, amp: drop ? 9 : Math.min(7, Math.abs(v) * 4), born: st.clock })
-      if (st.ripples.length > 8) st.ripples.shift()
+    if (drop) {
+      sim.drop(x, 18)
+      return
     }
+    // Only the part of the cursor that is in the fuel stirs it.
+    const p = pointer.current
+    const now = performance.now()
+    const v = p.lastX == null ? 0 : ((x - p.lastX) / Math.max(8, now - p.lastT)) * 1000 // px/s
+    p.lastX = x
+    p.lastT = now
+    const surfaceY = r.height * (1 - Math.max(0.015, Math.min(1, target.current.level))) - sim.at(x)
+    if (e.clientY - r.top < surfaceY - 24) return
+    sim.stir(x, Math.max(-1500, Math.min(1500, v)) * 0.05)
   }
 
   const fromPointer = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -276,7 +266,7 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
         if (e.pointerType === 'mouse') stirAt(e)
         if (onLevelChange && e.buttons) fromPointer(e)
       }}
-      onPointerLeave={() => (stir.current.lastX = null)}
+      onPointerLeave={() => (pointer.current.lastX = null)}
     >
       <canvas ref={canvas} aria-hidden className="absolute inset-0 h-full w-full" />
     </div>
