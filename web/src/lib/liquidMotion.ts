@@ -1,7 +1,8 @@
 /**
  * Shared motion input for the liquid: how far the phone is rolled (so the fuel stays
  * level with the ground), how hard it is being moved (so the fuel sloshes against the
- * walls) and quick scrolls on desktop. One set of listeners serves every tank.
+ * walls) and, on desktop, dragging the browser window or scrolling quickly.
+ * One set of listeners serves every tank.
  */
 
 export type MotionStatus =
@@ -88,10 +89,30 @@ function onScroll() {
   if (Math.abs(v) > 0.3) impulseListeners.forEach((l) => l(clamp(v * 0.05, 0.3)))
 }
 
+// Desktop: the browser window is the "device". Dragging it around the screen moves the
+// tank, so its acceleration drives the fuel just like a phone's accelerometer.
+const win = { x: 0, y: 0, vx: 0, vy: 0, t: 0, raf: 0 }
+const PX_PER_METRE = 800 // how many screen pixels feel like a metre of phone travel
+function pollWindow(now: number) {
+  win.raf = requestAnimationFrame(pollWindow)
+  if (gotSensorData) return
+  const dt = Math.max(0.008, (now - win.t) / 1000)
+  const x = window.screenX
+  const y = window.screenY
+  // Low-pass the velocity: window positions arrive in uneven steps while dragging.
+  const vx = win.vx + ((x - win.x) / dt - win.vx) * 0.35
+  const vy = win.vy + ((y - win.y) / dt - win.vy) * 0.35
+  accelX = clamp((vx - win.vx) / dt / PX_PER_METRE, 20)
+  accelY = clamp((vy - win.vy) / dt / PX_PER_METRE, 20)
+  Object.assign(win, { x, y, vx, vy, t: now })
+}
+
 function listen() {
   if (listening || typeof window === 'undefined') return
   listening = true
   lastScrollY = window.scrollY
+  Object.assign(win, { x: window.screenX, y: window.screenY, vx: 0, vy: 0, t: performance.now() })
+  win.raf = requestAnimationFrame(pollWindow)
   window.addEventListener('deviceorientation', onOrientation)
   window.addEventListener('devicemotion', onMotion)
   window.addEventListener('scroll', onScroll, { passive: true })
@@ -102,6 +123,7 @@ function unlisten() {
   if (!listening) return
   listening = false
   rollRad = accelX = accelY = 0
+  cancelAnimationFrame(win.raf)
   window.removeEventListener('deviceorientation', onOrientation)
   window.removeEventListener('devicemotion', onMotion)
   window.removeEventListener('scroll', onScroll)

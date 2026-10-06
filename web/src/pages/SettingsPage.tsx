@@ -106,7 +106,7 @@ export function SettingsPage() {
 
 const MOTION_NOTES: Record<MotionStatus, string> = {
   active: 'Motion sensors are on. Tilt or shake your phone.',
-  waiting: 'Waiting for motion sensors. Desktops have none; the fuel sloshes when you scroll.',
+  waiting: 'No motion sensors here. On a computer, drag the browser window, scroll fast or move the mouse over a tank.',
   'needs-permission': 'Tap the switch off and on to allow motion on this iPhone.',
   denied: 'Motion access was refused. Allow it in Safari settings for this site, then reload.',
   insecure: 'Phones only share motion with secure (https) pages. Open the app over https.',

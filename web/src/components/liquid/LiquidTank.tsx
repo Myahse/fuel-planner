@@ -20,6 +20,8 @@ type Props = {
 }
 
 type Bubble = { x: number; y: number; r: number; v: number }
+/** A ring spreading from where the pointer touched the surface (x in px, born in s). */
+type Ripple = { x: number; amp: number; born: number }
 
 const hexToRgb = (hex: string) => {
   const n = parseInt(hex.slice(1), 16)
@@ -41,6 +43,8 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
   const target = useRef({ level, status, reserve, bars, reserveLabel })
   target.current = { level, status, reserve, bars, reserveLabel }
   const redraw = useRef<() => void>(() => {})
+  // Pointer stirring, read by the draw loop: a sideways shove and spreading ripples.
+  const stir = useRef({ shove: 0, ripples: [] as Ripple[], lastX: null as number | null, lastT: 0, clock: 0 })
 
   useEffect(() => {
     const el = canvas.current
@@ -100,6 +104,8 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
         const target = Math.max(-0.9, Math.min(0.9, -liquidRoll() + (ax / 9.8) * 1.6))
         tiltV += (-40 * (tilt - target) - 3.5 * tiltV) * dt
         sloshV += ay * 40 * dt
+        tiltV += stir.current.shove
+        stir.current.shove = 0
         tilt += tiltV * dt
         sloshV += (-60 * slosh - 2.2 * sloshV) * dt
         slosh += sloshV * dt
@@ -110,7 +116,20 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
       const amp = reduce ? 0 : 1
       const slope = Math.tan(tilt)
       // Surface height at x, before the small travelling waves.
-      const level = (x: number) => surf + slope * (x - w / 2) + slosh * Math.cos((Math.PI * x) / w)
+      stir.current.clock = t
+      const ripples = (stir.current.ripples = stir.current.ripples.filter((r) => t - r.born < 1.6))
+      const ripple = (x: number) => {
+        let y = 0
+        for (const r of ripples) {
+          const age = t - r.born
+          const spread = 90 * age
+          const fade = r.amp * Math.exp(-age * 2.4) * Math.cos(age * 11)
+          const g = (d: number) => Math.exp(-(d * d) / 900)
+          y += fade * (g(x - r.x - spread) + g(x - r.x + spread))
+        }
+        return y
+      }
+      const level = (x: number) => surf + slope * (x - w / 2) + slosh * Math.cos((Math.PI * x) / w) + ripple(x)
 
       for (let layer = 0; layer < 2; layer++) {
         ctx.beginPath()
@@ -218,6 +237,25 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
     redraw.current()
   }, [level, status, reserve, bars])
 
+  // Moving the mouse across the fuel stirs it: the faster the sweep, the bigger the wake.
+  const stirAt = (e: ReactPointerEvent<HTMLDivElement>, drop = false) => {
+    const r = wrap.current?.getBoundingClientRect()
+    if (!r || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const st = stir.current
+    const x = e.clientX - r.left
+    const now = performance.now()
+    const v = st.lastX == null ? 0 : (x - st.lastX) / Math.max(8, now - st.lastT) // px/ms
+    st.lastX = x
+    st.lastT = now
+    // A hand dragged through liquid pushes it along: the side it moves towards rises.
+    st.shove -= Math.max(-0.5, Math.min(0.5, v * 0.25))
+    const last = st.ripples[st.ripples.length - 1]
+    if (drop || ((!last || st.clock - last.born > 0.12) && Math.abs(v) > 0.25)) {
+      st.ripples.push({ x, amp: drop ? 9 : Math.min(7, Math.abs(v) * 4), born: st.clock })
+      if (st.ripples.length > 8) st.ripples.shift()
+    }
+  }
+
   const fromPointer = (e: ReactPointerEvent<HTMLDivElement>) => {
     const r = wrap.current?.getBoundingClientRect()
     if (!r || !onLevelChange) return
@@ -228,15 +266,17 @@ export function LiquidTank({ level, status = 'ok', reserve = 0.1, bars = 8, rese
     <div
       ref={wrap}
       className={`overflow-hidden ${/\b(absolute|fixed|relative)\b/.test(className) ? '' : 'relative'} ${onLevelChange ? 'cursor-ns-resize touch-none' : ''} ${className}`}
-      onPointerDown={
-        onLevelChange
-          ? (e) => {
-              e.currentTarget.setPointerCapture(e.pointerId)
-              fromPointer(e)
-            }
-          : undefined
-      }
-      onPointerMove={onLevelChange ? (e) => e.buttons && fromPointer(e) : undefined}
+      onPointerDown={(e) => {
+        stirAt(e, true)
+        if (!onLevelChange) return
+        e.currentTarget.setPointerCapture(e.pointerId)
+        fromPointer(e)
+      }}
+      onPointerMove={(e) => {
+        if (e.pointerType === 'mouse') stirAt(e)
+        if (onLevelChange && e.buttons) fromPointer(e)
+      }}
+      onPointerLeave={() => (stir.current.lastX = null)}
     >
       <canvas ref={canvas} aria-hidden className="absolute inset-0 h-full w-full" />
     </div>
