@@ -4,9 +4,9 @@ import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import civ from '../../assets/civ.geo.json'
 import type { Sim } from '../../lib/types'
-import { CIV_BOUNDS, Pin, type Bounds, type PinData } from './pins'
+import { CIV_BOUNDS, Pin, declutter, type Bounds, type Padding, type PinData } from './pins'
 
-type Props = { token: string; pins: PinData[]; bounds: Bounds; night: boolean; sim: Sim | null }
+type Props = { token: string; pins: PinData[]; bounds: Bounds; night: boolean; sim: Sim | null; padding: Padding }
 
 // Everything outside Côte d'Ivoire is dimmed so the country reads like a
 // game board.
@@ -19,10 +19,10 @@ function worldMask(): GeoJSON.Feature<GeoJSON.Polygon> {
   }
 }
 
-export function MapboxMap({ token, pins, bounds, night, sim }: Props) {
+export function MapboxMap({ token, pins, bounds, night, sim, padding }: Props) {
   const container = useRef<HTMLDivElement>(null)
   const map = useRef<mapboxgl.Map | null>(null)
-  const markers = useRef<{ marker: mapboxgl.Marker; root: Root }[]>([])
+  const markers = useRef<{ pin: PinData; marker: mapboxgl.Marker; root: Root }[]>([])
 
   useEffect(() => {
     mapboxgl.accessToken = token
@@ -39,7 +39,7 @@ export function MapboxMap({ token, pins, bounds, night, sim }: Props) {
     m.on('load', () => {
       m.addSource('civ', { type: 'geojson', data: civ as GeoJSON.FeatureCollection })
       m.addSource('mask', { type: 'geojson', data: worldMask() })
-      m.addLayer({ id: 'mask', type: 'fill', source: 'mask', paint: { 'fill-color': '#0a2622', 'fill-opacity': 0.6 } })
+      m.addLayer({ id: 'mask', type: 'fill', source: 'mask', paint: { 'fill-color': '#0f1230', 'fill-opacity': 0.45 } })
       m.addLayer({ id: 'civ-glow', type: 'line', source: 'civ', paint: { 'line-color': '#f77f00', 'line-width': 10, 'line-opacity': 0.25, 'line-blur': 6 } })
       m.addLayer({ id: 'civ-line', type: 'line', source: 'civ', paint: { 'line-color': '#f77f00', 'line-width': 2.5 } })
     })
@@ -50,8 +50,10 @@ export function MapboxMap({ token, pins, bounds, night, sim }: Props) {
   }, [token])
 
   useEffect(() => {
-    map.current?.fitBounds(bounds, { padding: { top: 110, bottom: 200, left: 40, right: 40 }, duration: 1600, essential: true })
-  }, [bounds])
+    // Tilt the camera once inside a city: 3D buildings make it feel like a game.
+    const city = bounds[2] - bounds[0] < 1
+    map.current?.fitBounds(bounds, { padding, pitch: city ? 50 : 0, duration: 1600, essential: true })
+  }, [bounds, padding])
 
   useEffect(() => {
     const m = map.current
@@ -64,19 +66,35 @@ export function MapboxMap({ token, pins, bounds, night, sim }: Props) {
   useEffect(() => {
     const m = map.current
     if (!m) return
-    for (const p of pins) {
+    const created = pins.map((p) => {
       const el = document.createElement('div')
-      el.style.zIndex = p.variant === 'sim' ? '5' : p.lift ? '1' : '2'
+      el.style.zIndex = p.variant === 'sim' ? '30' : p.active ? '20' : '10'
       const root = createRoot(el)
-      root.render(<Pin pin={p} sim={sim} />)
-      markers.current.push({ marker: new mapboxgl.Marker({ element: el, anchor: 'bottom' }).setLngLat([p.lng, p.lat]).addTo(m), root })
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom' }).setLngLat([p.lng, p.lat]).addTo(m)
+      return { pin: p, marker, root }
+    })
+    // Re-run label de-collision whenever the camera settles.
+    const layout = () => {
+      const layout = declutter(
+        pins,
+        (lng, lat) => {
+          const pt = m.project([lng, lat])
+          return [pt.x, pt.y]
+        },
+        m.getContainer().clientWidth,
+        padding.top - 10,
+      )
+      for (const { pin, root } of created) root.render(<Pin pin={layout[pin.id] ? { ...pin, ...layout[pin.id] } : pin} sim={sim} />)
     }
+    layout()
+    m.on('moveend', layout)
+    markers.current = created
     return () => {
-      const old = markers.current
+      m.off('moveend', layout)
       markers.current = []
-      queueMicrotask(() => old.forEach(({ marker, root }) => (root.unmount(), marker.remove())))
+      queueMicrotask(() => created.forEach(({ marker, root }) => (root.unmount(), marker.remove())))
     }
-  }, [pins, sim])
+  }, [pins, sim, padding.top])
 
-  return <div ref={container} className="absolute inset-0" />
+  return <div ref={container} className="isolate absolute inset-0" />
 }

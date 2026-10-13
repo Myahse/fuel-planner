@@ -14,10 +14,20 @@ maquis… et laisse les évènements aléatoires pimenter ta vie.
 
 ## Les écrans
 
-1. **Accueil / connexion** (`/`) : titre du jeu et bouton « Continuer avec Google ». En local, un bouton « Jouer en local » permet de jouer sans Google.
-2. **Créer un Sim** (`/creer`) : identité, apparence (teint, coiffure, pagne wax, boubou, maillot des Éléphants…), traits et aspiration, puis ville et commune de départ. L'aperçu de l'avatar se met à jour en direct.
-3. **Le jeu** (`/jeu`) : la carte Mapbox de la Côte d'Ivoire, avec le HUD façon Sims (horloge du jeu, FCFA, humeur et jauges des besoins). On zoome du pays vers la ville, puis la commune, puis le lieu. Cliquer sur un lieu ouvre le **menu circulaire** des interactions. Les trajets se font en woro-woro (dans une ville) ou en car (entre deux villes). Un journal garde la trace de tout ce qui arrive.
-4. **Profil** (`/profil`) : le compte Google, la fiche du Sim, les statistiques et le journal complet.
+Captures dans `docs/screens/` (`m-` = mobile, `d-` = ordinateur).
+
+1. **Accueil** (`/`) : illustration d'Abidjan au coucher du soleil, logo, et un seul bouton « Continuer avec Google ». En local, on peut aussi « Jouer » sans Google.
+2. **Créer un Sim** (`/creer`) : un studio comme dans les jeux mobiles. L'avatar est sur une scène et, en dessous, des onglets (Identité, Teint, Coiffure, Tenue, Caractère, Quartier). Chaque choix montre une vignette de l'avatar plutôt qu'un simple texte.
+3. **Le jeu** (`/jeu`) : la carte en plein écran avec le HUD (portrait avec l'humeur, pièces en FCFA, horloge, journal). Les jauges des besoins sont des anneaux. Sur mobile, le panneau Explorer est en bas de l'écran ; sur ordinateur, il flotte à gauche. Les activités s'ouvrent dans un menu circulaire façon Sims sur ordinateur et dans une liste en bas de l'écran sur mobile.
+4. **Profil** (`/profil`) : la carte du Sim, à partager (WhatsApp, etc.), avec ses statistiques et son histoire.
+
+### Principes de design
+
+- **Mobile d'abord** : en Côte d'Ivoire, on joue surtout sur Android. Les boutons sont grands et à portée du pouce, le panneau du bas se réduit, et rien d'important n'est caché en haut de l'écran.
+- **Codes des jeux mobiles** : boutons en relief, tuiles d'icônes colorées, pièces dorées, des retours à chaque action (barre de progression, notifications, imprévus).
+- **Un seul jeu d'icônes** ([lucide](https://lucide.dev)), choisi par l'API (`icon: "drumstick"`), et une couleur par type de lieu (maquis = rouge corail, marché = or, plage = turquoise…).
+- **Identité ivoirienne** : orange, blanc et vert du drapeau ; pagne wax, foulard, maillot des Éléphants ; textes en français avec des expressions d'ici.
+- **La carte hors-ligne est un vrai plateau de jeu** : frontières, fleuves, lacs et routes de Natural Earth, savane au nord et forêt au sud, lagune Ébrié dessinée à la main. Les étiquettes s'écartent automatiquement pour ne pas se chevaucher. Avec un token, Mapbox prend le relais (relief 3D dans les villes, mode nuit qui suit l'horloge du jeu).
 
 ## Lancer en local
 

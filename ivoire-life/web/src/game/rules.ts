@@ -1,13 +1,14 @@
 // Mirrors backend/internal/game so the HUD can tick smoothly between server
 // round-trips. The server stays authoritative on every action.
+import { Droplets, Gamepad2, MessageCircle, UtensilsCrossed, Zap, type LucideIcon } from 'lucide-react'
 import type { Interaction, NeedKey, Needs } from '../lib/types'
 
-export const NEEDS: { key: NeedKey; label: string; icon: string }[] = [
-  { key: 'hunger', label: 'Faim', icon: '🍽️' },
-  { key: 'energy', label: 'Énergie', icon: '⚡' },
-  { key: 'hygiene', label: 'Hygiène', icon: '🧼' },
-  { key: 'social', label: 'Social', icon: '💬' },
-  { key: 'fun', label: 'Loisirs', icon: '🎲' },
+export const NEEDS: { key: NeedKey; label: string; icon: LucideIcon }[] = [
+  { key: 'hunger', label: 'Faim', icon: UtensilsCrossed },
+  { key: 'energy', label: 'Énergie', icon: Zap },
+  { key: 'hygiene', label: 'Hygiène', icon: Droplets },
+  { key: 'social', label: 'Social', icon: MessageCircle },
+  { key: 'fun', label: 'Loisirs', icon: Gamepad2 },
 ]
 
 const DECAY_PER_HOUR: Needs = { hunger: 4, energy: 3, hygiene: 3, social: 2.5, fun: 3 }
@@ -22,11 +23,6 @@ export function decay(n: Needs, minutes: number): Needs {
 
 export const mood = (n: Needs) => (n.hunger + n.energy + n.hygiene + n.social + n.fun) / 5
 
-export function moodColor(value: number) {
-  if (value >= 60) return '#00b36b'
-  if (value >= 35) return '#f2b705'
-  return '#e5383b'
-}
 
 export function clock(gameMinutes: number) {
   const day = Math.floor(gameMinutes / 1440) + 1
@@ -44,6 +40,7 @@ export function available(it: Interaction, hour: number) {
 }
 
 export const fcfa = (n: number) => `${n.toLocaleString('fr-FR')} F`
+export const amount = (n: number) => n.toLocaleString('fr-FR')
 
 export function duration(minutes: number) {
   if (minutes < 60) return `${minutes} min`

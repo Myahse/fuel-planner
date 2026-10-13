@@ -6,6 +6,7 @@ import { Title } from './screens/Title'
 import { CreateSim } from './screens/CreateSim'
 import { Play } from './screens/Play'
 import { Profile } from './screens/Profile'
+import { Plumbob } from './components/ui'
 
 export function App() {
   const token = useSession((s) => s.token)
@@ -15,7 +16,13 @@ export function App() {
     load()
   }, [load])
 
-  if (!world && !error) return <div className="bg-wax grid h-full place-items-center font-display text-2xl text-white">Chargement…</div>
+  if (!world && !error) {
+    return (
+      <div className="grid h-full place-items-center bg-[var(--color-night)]">
+        <Plumbob size={24} />
+      </div>
+    )
+  }
 
   if (!token || !world) {
     return (
