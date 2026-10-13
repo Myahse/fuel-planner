@@ -1,0 +1,292 @@
+@import 'tailwindcss';
+@import '@fontsource/fredoka/500.css';
+@import '@fontsource/fredoka/700.css';
+@import '@fontsource/nunito/400.css';
+@import '@fontsource/nunito/700.css';
+@import '@fontsource/nunito/800.css';
+
+@theme {
+  --font-display: 'Fredoka', system-ui, sans-serif;
+  --font-sans: 'Nunito', system-ui, sans-serif;
+
+  /* Drapeau : orange, blanc, vert */
+  --color-orange: #f77f00;
+  --color-orange-dark: #c96500;
+  --color-green: #009e60;
+  --color-green-dark: #006b41;
+  --color-forest: #0b3d2e;
+  --color-night: #0a2622;
+  --color-cream: #fff8ec;
+  --color-sand: #f4e6cc;
+  --color-ink: #1d2a26;
+  --color-gold: #f2b705;
+  --color-danger: #e5383b;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-forest);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Wax-print inspired background used behind menus. */
+.bg-wax {
+  background-color: var(--color-forest);
+  background-image:
+    radial-gradient(circle at 25% 25%, rgb(247 127 0 / 0.18) 0 9px, transparent 10px),
+    radial-gradient(circle at 75% 75%, rgb(0 158 96 / 0.35) 0 9px, transparent 10px),
+    radial-gradient(circle at 75% 25%, rgb(255 255 255 / 0.06) 0 3px, transparent 4px),
+    radial-gradient(circle at 25% 75%, rgb(255 255 255 / 0.06) 0 3px, transparent 4px),
+    linear-gradient(45deg, rgb(255 255 255 / 0.03) 25%, transparent 25% 75%, rgb(255 255 255 / 0.03) 75%);
+  background-size: 56px 56px;
+}
+
+/* Game panel: cream card with a chunky border, like a Sims dialog. */
+.panel {
+  background: var(--color-cream);
+  border: 3px solid #fff;
+  border-radius: 22px;
+  box-shadow:
+    0 0 0 2px rgb(11 61 46 / 0.25),
+    0 14px 40px rgb(0 0 0 / 0.35);
+}
+
+.panel-dark {
+  background: rgb(10 38 34 / 0.86);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgb(255 255 255 / 0.14);
+  border-radius: 20px;
+  color: #fff;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+}
+
+/* Chunky game buttons that press down. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  border-radius: 16px;
+  padding: 0.75rem 1.25rem;
+  color: #fff;
+  background: var(--color-orange);
+  box-shadow: 0 5px 0 var(--color-orange-dark);
+  transition:
+    transform 80ms ease,
+    box-shadow 80ms ease,
+    filter 120ms ease;
+  cursor: pointer;
+  user-select: none;
+}
+.btn:hover {
+  filter: brightness(1.06);
+}
+.btn:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--color-orange-dark);
+}
+.btn:disabled {
+  filter: grayscale(0.7);
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+.btn-green {
+  background: var(--color-green);
+  box-shadow: 0 5px 0 var(--color-green-dark);
+}
+.btn-green:active {
+  box-shadow: 0 1px 0 var(--color-green-dark);
+}
+.btn-ghost {
+  background: #fff;
+  color: var(--color-ink);
+  box-shadow: 0 5px 0 #d8cbb2;
+}
+.btn-ghost:active {
+  box-shadow: 0 1px 0 #d8cbb2;
+}
+
+.input {
+  width: 100%;
+  border-radius: 14px;
+  border: 2px solid #e6d7b8;
+  background: #fff;
+  padding: 0.6rem 0.75rem;
+  font-weight: 700;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--color-green);
+}
+
+.chip {
+  border-radius: 14px;
+  border: 2px solid #e6d7b8;
+  background: #fff;
+  padding: 0.5rem 0.75rem;
+  font-weight: 700;
+  transition:
+    border-color 120ms,
+    transform 120ms,
+    background 120ms;
+  cursor: pointer;
+}
+.chip:hover {
+  transform: translateY(-1px);
+}
+.chip:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+.chip[aria-pressed='true'] {
+  border-color: var(--color-green);
+  background: #e6f7ef;
+}
+
+.title-3d {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #fff;
+  text-shadow:
+    0 3px 0 var(--color-orange-dark),
+    0 6px 0 rgb(0 0 0 / 0.25),
+    0 12px 24px rgb(0 0 0 / 0.35);
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotateY(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotateY(180deg);
+  }
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-pop {
+  animation: pop-in 220ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes pulse-ring {
+  from {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+/* Map pins (used both on Mapbox HTML markers and the offline map). */
+.pin {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  font-family: var(--font-display);
+}
+/* Offline map positions pins by their tip; Mapbox does it via anchor. */
+.pin-abs {
+  position: absolute;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  transition:
+    left 900ms cubic-bezier(0.4, 0, 0.2, 1),
+    top 900ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pin-bubble {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  background: #fff;
+  color: var(--color-ink);
+  border-radius: 999px;
+  padding: 3px 10px 3px 4px;
+  font-weight: 700;
+  font-size: 13px;
+  border: 3px solid var(--color-orange);
+  box-shadow: 0 4px 0 rgb(0 0 0 / 0.2);
+  transition: transform 120ms;
+}
+.pin:hover .pin-bubble {
+  transform: scale(1.08);
+}
+.pin-bubble .pin-icon {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--color-cream);
+  font-size: 15px;
+}
+.pin-stem {
+  width: 4px;
+  height: 12px;
+  background: var(--color-orange);
+  border-radius: 0 0 4px 4px;
+}
+.pin[data-variant='commune'] .pin-bubble {
+  border-color: var(--color-green);
+}
+.pin[data-variant='commune'] .pin-stem {
+  background: var(--color-green);
+}
+.pin[data-variant='place'] .pin-bubble {
+  border-color: #fff;
+  background: var(--color-forest);
+  color: #fff;
+  font-size: 13px;
+}
+.pin[data-variant='place'] .pin-stem {
+  background: #fff;
+}
+.pin[data-active='true'] .pin-bubble {
+  background: var(--color-orange);
+  color: #fff;
+  border-color: #fff;
+}
+
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib {
+  opacity: 0.6;
+}
+
+@keyframes grow {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
